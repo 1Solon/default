@@ -6,10 +6,10 @@ var builder = require('./role.builder');
 
 // Import function utilities
 var creepMaker = require('./util.creepbody');
-const { find } = require('lodash');
+var constructionManager = require('./spawn.constructionmanager')
 
 // Grabs all sources
-const sources = Game.spawns['Spawn1'].room.find(FIND_SOURCES);
+let sources = Game.spawns['Spawn1'].room.find(FIND_SOURCES);
 
 // This function runs every tick
 module.exports.loop = function () {
@@ -52,8 +52,18 @@ module.exports.loop = function () {
         }
     }
 
+    // There should always be a hauler for every non-hauler creep
+    if (haulers.length < (harvesters.length + upgraders.length)) {
+
+        // Spawn a new one
+        let newName = 'Hauler' + Game.time;
+        if (spawnEnergy == totalSpawnEnergy) {
+            Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'hauler'), newName, { memory: { role: 'hauler' } });
+        }
+    }
+
     // If there is not enough haulers per resource zone, build them
-    if (harvesters.length < (sources.length * 2)) {
+    else if (harvesters.length < (sources.length * 2)) {
 
         // Creates a counting array of the same size as sources
         var noOfMinersAtSources = [];
@@ -75,20 +85,9 @@ module.exports.loop = function () {
             if (noOfMinersAtSources[i] < 2) {
                 let newName = 'Harvester' + Game.time;
                 if (spawnEnergy == totalSpawnEnergy) {
-                    console.log('hi')
                     Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'harvester'), newName, { memory: { role: 'harvester', target: sources[i].id } });
                 }
             }
-        }
-    }
-
-    // There should always be a hauler for every non-hauler creep
-    else if (haulers.length < (harvesters.length + upgraders.length)) {
-
-        // Spawn a new one
-        let newName = 'Hauler' + Game.time;
-        if (spawnEnergy == totalSpawnEnergy) {
-            Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'hauler'), newName, { memory: { role: 'hauler' } });
         }
     }
 
@@ -163,14 +162,6 @@ module.exports.loop = function () {
             continue
         }
     }
-    const spawnRoom = Game.spawns['Spawn1'];
-    let roomTerrain = spawnRoom.room.lookForAtArea(LOOK_TERRAIN, spawnRoom.pos.y - 4, spawnRoom.pos.x - 5, spawnRoom.pos.y + 5, spawnRoom.pos.x + 5, true)
-    for (i in roomTerrain) {
-        if (roomTerrain[i].terrain == 'plain') {
-            if (spawnRoom.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
-                let placePos = new RoomPosition(roomTerrain[i].x, roomTerrain[i].y, spawnRoom.room.name);
-                spawnRoom.room.createConstructionSite(placePos, STRUCTURE_EXTENSION)
-            }
-        }
-    }
+
+    constructionManager();
 }
