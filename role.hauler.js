@@ -11,8 +11,8 @@ var hauler = {
         // Find the closest spawn
         var closestSpawn = creep.pos.findClosestByRange(spawns);
 
-        // If the hauler is greater then half empty
-        if (creep.store.getFreeCapacity(RESOURCE_ENERGY) > 50) {
+        // If the hauler is empty 
+        if (creep.store.getUsedCapacity(RESOURCE_ENERGY) < 50) {
 
             // Find energy on the ground
             var droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {

@@ -4,12 +4,13 @@ module.exports = function (energy, roleName) {
 
     switch (roleName) {
         case "harvester":
-            partBudget = Math.floor((energy - 50) / 100);
+            partBudget = Math.floor(energy / 250);
 
             for (let i = 0; i < partBudget; i++) {
                 body.push(WORK);
+                body.push(WORK);
+                body.push(MOVE);
             }
-            body.push(MOVE);
 
             return body;
 
