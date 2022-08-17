@@ -29,7 +29,7 @@ var hauler = {
                 // Move to it
                 creep.moveTo(closestDroppedEnergy, {
                     visualizePathStyle: { stroke: "#ffaa00" },
-                }, { reusePath: 15 }
+                }, { reusePath: 5 }
                 );
             }
 
@@ -39,7 +39,7 @@ var hauler = {
                 // Move to it
                 creep.moveTo(closestSpawn, {
                     visualizePathStyle: { stroke: "#ffaa00" },
-                }, { reusePath: 15 });
+                }, { reusePath: 5 });
             }
 
         } else if (extensions.find(structure => structure.store[RESOURCE_ENERGY] < 50) != undefined) {
@@ -54,7 +54,7 @@ var hauler = {
                     // Move to it
                     creep.moveTo(Game.getObjectById(emptyExtensionPos), {
                         visualizePathStyle: { stroke: "#ffaa00" },
-                    }, { reusePath: 15 });
+                    }, { reusePath: 5 });
                 }
             
         } else {
@@ -80,7 +80,7 @@ var hauler = {
                     // Move to it
                     creep.moveTo(Game.getObjectById(minId), {
                         visualizePathStyle: { stroke: "#ffaa00" },
-                    }, { reusePath: 15 });
+                    }, { reusePath: 5 });
 
                     // Reset minval
                     minVal = 50;

@@ -10,7 +10,7 @@ var miner = {
     if (creep.harvest(source) == ERR_NOT_IN_RANGE) {
 
       // Move to it
-      creep.moveTo(source, { visualizePathStyle: { stroke: "#ffaa00" }, }, { reusePath: 15 });
+      creep.moveTo(source, { visualizePathStyle: { stroke: "#ffaa00" }, }, { reusePath: 5 });
     }
   },
 };
