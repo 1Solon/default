@@ -29,7 +29,7 @@ var builder = {
             if (creep.build(target) == ERR_NOT_IN_RANGE) {
 
                 // Move to it
-                creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } }, { reusePath: 15 });
+                creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } }, { reusePath: 5 });
             }
 
         } else {
@@ -49,7 +49,7 @@ var builder = {
                 // Move to it
                 creep.moveTo(closestDroppedEnergy, {
                     visualizePathStyle: { stroke: "#ffaa00" },
-                }, { reusePath: 15 }
+                }, { reusePath: 5 }
                 );
             }
         }
