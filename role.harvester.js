@@ -1,4 +1,4 @@
-var miner = {
+var harvester = {
 
   /** @param {Creep} creep **/
   run: function (creep) {
@@ -15,4 +15,4 @@ var miner = {
   },
 };
 
-module.exports = miner;
+module.exports = harvester;
