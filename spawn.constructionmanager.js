@@ -1,7 +1,37 @@
 module.exports = function () {
 
+    // Defines sources
+    let sources = Game.spawns['Spawn1'].room.find(FIND_SOURCES);
+
+    // Defines spawn
     const spawn = Game.spawns['Spawn1'];
-    let roomTerrain = spawn.room.lookForAtArea(LOOK_TERRAIN, spawn.pos.y - 5, spawn.pos.x - 5, spawn.pos.y + 5, spawn.pos.x + 5, true)
+
+    // Grabs roomTerrain
+    let roomTerrain = spawn.room.lookForAtArea(LOOK_TERRAIN, spawn.pos.y - 6, spawn.pos.x - 6, spawn.pos.y + 6, spawn.pos.x + 6, true)
+
+    // Tries to construct a turret to the left of the spawner
+    spawn.room.createConstructionSite(spawn.pos.x+6, spawn.pos.y, STRUCTURE_TOWER)
+
+    // Finds the path to all availible sources, then builds roads to them
+    for (let j = 0; j < sources.length; j++) {
+        let roadPath = spawn.pos.findPathTo(sources[j].pos, { maxOps: 200, ignoreCreeps: true, plainCost: 5, swampCost: 10});
+        for (let i = 0; i < roadPath.length; i++) {
+            if ((spawn.room.lookForAt(LOOK_TERRAIN, roadPath[i].x, roadPath[i].y) != 'wall')) {
+                spawn.room.createConstructionSite(roadPath[i].x, roadPath[i].y, STRUCTURE_ROAD);
+            }
+        }
+    }
+
+    // Finds a path to the room controller
+    let roadPath = Game.spawns['Spawn1'].pos.findPathTo(Game.spawns['Spawn1'].room.controller.pos, { maxOps: 500, ignoreCreeps: true, plainCost: 5, swampCost: 10 });
+    for (let i = 0; i < roadPath.length; i++) {
+        if (i != roadPath.length) {
+            if ((spawn.room.lookForAt(LOOK_TERRAIN, roadPath[i].x, roadPath[i].y) != 'wall')) {
+                Game.spawns['Spawn1'].room.createConstructionSite(roadPath[i].x, roadPath[i].y, STRUCTURE_ROAD);
+            }
+        }
+    }
+
     for (i in roomTerrain) {
         if (roomTerrain[i].terrain == 'plain' || roomTerrain[i].terrain == 'swamp') {
             if (spawn.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
@@ -44,28 +74,6 @@ module.exports = function () {
                         spawn.room.createConstructionSite(placePos, STRUCTURE_ROAD)
                         break
                 }
-
-            }
-        }
-    }
-
-    // Finds the path to all availible sources, then builds roads to them
-    let sources = Game.spawns['Spawn1'].room.find(FIND_SOURCES);
-    for (let j = 0; j < sources.length; j++) {
-        let roadPath = spawn.pos.findPathTo(sources[j].pos, { maxOps: 200, ignoreCreeps: true, plainCost: 5, swampCost: 10});
-        for (let i = 0; i < roadPath.length; i++) {
-            if ((spawn.room.lookForAt(LOOK_TERRAIN, roadPath[i].x, roadPath[i].y) != 'wall')) {
-                spawn.room.createConstructionSite(roadPath[i].x, roadPath[i].y, STRUCTURE_ROAD);
-            }
-        }
-    }
-
-    // Finds a path to the room controller
-    let roadPath = Game.spawns['Spawn1'].pos.findPathTo(Game.spawns['Spawn1'].room.controller.pos, { maxOps: 500, ignoreCreeps: true, plainCost: 5, swampCost: 10 });
-    for (let i = 0; i < roadPath.length; i++) {
-        if (i != roadPath.length) {
-            if ((spawn.room.lookForAt(LOOK_TERRAIN, roadPath[i].x, roadPath[i].y) != 'wall')) {
-                Game.spawns['Spawn1'].room.createConstructionSite(roadPath[i].x, roadPath[i].y, STRUCTURE_ROAD);
             }
         }
     }
