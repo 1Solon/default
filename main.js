@@ -3,6 +3,7 @@ var miner = require('./role.harvester');
 var upgrader = require('./role.upgrader');
 var hauler = require('./role.hauler');
 var builder = require('./role.builder');
+var tower = require('./role.tower');
 
 // Import function utilities
 var creepMaker = require('./util.creepbody');
@@ -23,23 +24,6 @@ module.exports.loop = function () {
     // Stores total energy capacity of the current room
     let spawnEnergy = Game.spawns['Spawn1'].room.energyAvailable;
 
-    // If total amount of creeps is less then five, this means the colony has been wiped out, ammend totalSpawnEnergy to correct
-    totalCreeps = harvesters.length + haulers.length + upgraders.length + builders.length;
-    try {
-        if (totalCreeps < 5) {
-            // Colony population has dropped below five, ammend
-            totalSpawnEnergy = 300;
-            spawnEnergy = 300;
-        } else {
-            // Colony population is nominal, resume standard operation
-            totalSpawnEnergy = Game.spawns['Spawn1'].room.energyCapacityAvailable;
-        }  
-    } catch (error) {
-        // Colony population has hit zero, ammend to 300
-        totalSpawnEnergy = 300;
-        spawnEnergy = 300;
-    }
-
     // Loop through each creep's name in Memory.creeps
     for (var creepName in Memory.creeps) {
 
@@ -57,9 +41,7 @@ module.exports.loop = function () {
 
         // Spawn a new one
         let newName = 'Hauler' + Game.time;
-        if (spawnEnergy == totalSpawnEnergy) {
-            Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'hauler'), newName, { memory: { role: 'hauler' } });
-        }
+        Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'hauler'), newName, { memory: { role: 'hauler' } });
     }
 
     // If there is not enough haulers per resource zone, build them
@@ -84,9 +66,7 @@ module.exports.loop = function () {
         for (i in noOfMinersAtSources) {
             if (noOfMinersAtSources[i] < 2) {
                 let newName = 'Harvester' + Game.time;
-                if (spawnEnergy == totalSpawnEnergy) {
-                    Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'harvester'), newName, { memory: { role: 'harvester', target: sources[i].id } });
-                }
+                Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'harvester'), newName, { memory: { role: 'harvester', target: sources[i].id } });
             }
         }
     }
@@ -96,9 +76,7 @@ module.exports.loop = function () {
 
         // Spawn a new one
         let newName = 'Upgrader' + Game.time;
-        if (spawnEnergy == totalSpawnEnergy) {
-            Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'upgrader'), newName, { memory: { role: 'upgrader', upgrading: false } });
-        }
+        Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'upgrader'), newName, { memory: { role: 'upgrader', upgrading: false } });
     }
 
     // There should always be two builders
@@ -106,9 +84,7 @@ module.exports.loop = function () {
 
         // Spawn a new one
         let newName = 'Builder' + Game.time;
-        if (spawnEnergy == totalSpawnEnergy) {
-            Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'builder'), newName, { memory: { role: 'builder', building: false } });
-        }
+        Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'builder'), newName, { memory: { role: 'builder', building: false } });
     }
 
     // If the spawn is spawning a creep
@@ -161,7 +137,11 @@ module.exports.loop = function () {
             hauler.run(creep);
             continue
         }
-    }
 
+    }
+    // Starts the tower
+    tower.run(Game.spawns['Spawn1'].room)
+
+    // Runs the construction manager
     constructionManager();
 }
