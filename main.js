@@ -6,6 +6,7 @@ var builder = require('./role.builder');
 
 // Import function utilities
 var creepMaker = require('./util.creepbody');
+const { find } = require('lodash');
 
 // Grabs all sources
 const sources = Game.spawns['Spawn1'].room.find(FIND_SOURCES);
@@ -13,9 +14,31 @@ const sources = Game.spawns['Spawn1'].room.find(FIND_SOURCES);
 // This function runs every tick
 module.exports.loop = function () {
 
+    // Get counts for creeps of each role
+    var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
+    var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
+    var haulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'hauler');
+    var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
+
     // Stores total energy capacity of the current room
     let spawnEnergy = Game.spawns['Spawn1'].room.energyAvailable;
-    let totalSpawnEnergy = Game.spawns['Spawn1'].room.energyCapacityAvailable;
+
+    // If total amount of creeps is less then five, this means the colony has been wiped out, ammend totalSpawnEnergy to correct
+    totalCreeps = harvesters.length + haulers.length + upgraders.length + builders.length;
+    try {
+        if (totalCreeps < 5) {
+            // Colony population has dropped below five, ammend
+            totalSpawnEnergy = 300;
+            spawnEnergy = 300;
+        } else {
+            // Colony population is nominal, resume standard operation
+            totalSpawnEnergy = Game.spawns['Spawn1'].room.energyCapacityAvailable;
+        }  
+    } catch (error) {
+        // Colony population has hit zero, ammend to 300
+        totalSpawnEnergy = 300;
+        spawnEnergy = 300;
+    }
 
     // Loop through each creep's name in Memory.creeps
     for (var creepName in Memory.creeps) {
@@ -29,63 +52,62 @@ module.exports.loop = function () {
         }
     }
 
-    // Get counts for creeps of each role
-    var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-    var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
-    var haulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'hauler');
-    var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
+    // If there is not enough haulers per resource zone, build them
+    if (harvesters.length < (sources.length * 2)) {
 
-    // Creates a counting array of the same size as sources
-    var noOfMinersAtSources = [];
-    for (i in sources) {
-        noOfMinersAtSources.push(0);
-    }
+        // Creates a counting array of the same size as sources
+        var noOfMinersAtSources = [];
+        for (i in sources) {
+            noOfMinersAtSources.push(0);
+        }
 
-    // Counts how many harvesters there are of each source
-    for (i in sources) {
-        for (j in harvesters) {
-            if (sources[i].id == harvesters[j].memory.target) {
-                noOfMinersAtSources[i]++
+        // Counts how many harvesters there are of each source
+        for (i in sources) {
+            for (j in harvesters) {
+                if (sources[i].id == harvesters[j].memory.target) {
+                    noOfMinersAtSources[i]++
+                }
             }
         }
-    }
 
-    // Checks if a source has no harvesters assigned, if no, spawn one
-    for (i in noOfMinersAtSources) {
-        if (noOfMinersAtSources[i] < 2) {
-            let newName = 'Harvester' + Game.time;
-            if (spawnEnergy == totalSpawnEnergy){
-                Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'harvester'), newName, { memory: { role: 'harvester', target: sources[i].id } });
+        // Checks if a source has no harvesters assigned, if no, spawn one
+        for (i in noOfMinersAtSources) {
+            if (noOfMinersAtSources[i] < 2) {
+                let newName = 'Harvester' + Game.time;
+                if (spawnEnergy == totalSpawnEnergy) {
+                    console.log('hi')
+                    Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'harvester'), newName, { memory: { role: 'harvester', target: sources[i].id } });
+                }
             }
         }
     }
 
     // There should always be a hauler for every non-hauler creep
-    if (haulers.length < (harvesters.length + upgraders.length)) {
+    else if (haulers.length < (harvesters.length + upgraders.length)) {
 
         // Spawn a new one
         let newName = 'Hauler' + Game.time;
-        if (spawnEnergy == totalSpawnEnergy){
+        if (spawnEnergy == totalSpawnEnergy) {
             Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'hauler'), newName, { memory: { role: 'hauler' } });
         }
     }
 
     // Otherwise if there aren't enough upgraders
-    if (upgraders.length < 2) {
+    else if (upgraders.length < 2) {
 
         // Spawn a new one
         let newName = 'Upgrader' + Game.time;
-        if (spawnEnergy == totalSpawnEnergy){
+        if (spawnEnergy == totalSpawnEnergy) {
             Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'upgrader'), newName, { memory: { role: 'upgrader', upgrading: false } });
         }
     }
 
     // There should always be two builders
-    if (builders.length < 2) {
+    else if (builders.length < 2) {
 
         // Spawn a new one
         let newName = 'Builder' + Game.time;
-        if (spawnEnergy == totalSpawnEnergy){
+        if (spawnEnergy == totalSpawnEnergy) {
             Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'builder'), newName, { memory: { role: 'builder', building: false } });
         }
     }
