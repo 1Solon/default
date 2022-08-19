@@ -9,7 +9,7 @@ module.exports = {
             let tower = towers[i];
 
             if (tower.energy > 500) {
-                let closestDamagedStructure = tower.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+                let closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
                     filter: (structure) => (structure.hits < (structure.hitsMax < 50000 ? structure.hitsMax : 50000))
                 });
 

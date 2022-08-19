@@ -4,13 +4,20 @@ module.exports = function (energy, roleName) {
 
     switch (roleName) {
         case "harvester":
-            partBudget = Math.floor(energy / 250);
+            partBudget = Math.floor(energy-100 / 100);
+
+            // 10 work parts is optimal for a source
+            if (partBudget > 10){
+                partBudget = 10;
+            }
 
             for (let i = 0; i < partBudget; i++) {
                 body.push(WORK);
-                body.push(WORK);
-                body.push(MOVE);
             }
+
+            // Pushes two move objects
+            body.push(MOVE);
+            body.push(MOVE);
 
             return body;
 
@@ -24,7 +31,7 @@ module.exports = function (energy, roleName) {
 
             return body;
 
-        case "builder":
+        case "worker":
             partBudget = Math.floor((energy) / 200);
 
             for (let i = 0; i < partBudget; i++) {
@@ -35,15 +42,15 @@ module.exports = function (energy, roleName) {
             
             return body;
 
-        case "upgrader":
-            partBudget = Math.floor((energy) / 200);
-
-            for (let i = 0; i < partBudget; i++) {
-                body.push(WORK);
-                body.push(MOVE);
-                body.push(CARRY);
-            }
-            
-            return body;
+            case "longRangeHarvester":
+                partBudget = Math.floor((energy) / 200);
+    
+                for (let i = 0; i < partBudget; i++) {
+                    body.push(WORK);
+                    body.push(MOVE);
+                    body.push(CARRY);
+                }
+                
+                return body;
     }
 };

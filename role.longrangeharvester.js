@@ -1,13 +1,13 @@
 var longRangeHarvester = {
 
     /** @param {Creep} creep **/
-    run: function (creep, homeRoom, targetRoom ) {
-        
-        
+    run: function (creep, homeRoom ) {
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) < creep.store.getFreeCapacity(RESOURCE_ENERGY)){
+        if (creep.room.name == homeRoom.name){
+          creep.pos.findClosestByRange(creep.room.findExitTo(homeRoom))
+        }
+      }
 
-
-
-  
       // Find sources in the room
       var source = Game.getObjectById(creep.memory.target);
   

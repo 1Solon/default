@@ -1,8 +1,7 @@
 // Import creep roles
-var miner = require('./role.harvester');
-var upgrader = require('./role.upgrader');
+var harvester = require('./role.harvester');
 var hauler = require('./role.hauler');
-var builder = require('./role.builder');
+var worker = require('./role.worker')
 var tower = require('./role.tower');
 
 // Import function utilities
@@ -17,9 +16,8 @@ module.exports.loop = function () {
 
     // Get counts for creeps of each role
     var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-    var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
+    var workers = _.filter(Game.creeps, (creep) => creep.memory.role == 'worker');
     var haulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'hauler');
-    var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
 
     // Stores total energy capacity of the current room
     let spawnEnergy = Game.spawns['Spawn1'].room.energyAvailable;
@@ -36,8 +34,8 @@ module.exports.loop = function () {
         }
     }
 
-    // There should always be a hauler for every non-hauler creep
-    if (haulers.length < (harvesters.length + upgraders.length)) {
+    // There should always be a hauler for every excavator creep
+    if (haulers.length < harvesters.length) {
 
         // Spawn a new one
         let newName = 'Hauler' + Game.time;
@@ -64,27 +62,18 @@ module.exports.loop = function () {
 
         // Checks if a source has no harvesters assigned, if no, spawn one
         for (i in noOfMinersAtSources) {
-            if (noOfMinersAtSources[i] < 2) {
+            if (noOfMinersAtSources[i] < 1) {
                 let newName = 'Harvester' + Game.time;
                 Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'harvester'), newName, { memory: { role: 'harvester', target: sources[i].id } });
             }
         }
     }
-
-    // Otherwise if there aren't enough upgraders
-    else if (upgraders.length < 2) {
-
-        // Spawn a new one
-        let newName = 'Upgrader' + Game.time;
-        Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'upgrader'), newName, { memory: { role: 'upgrader', upgrading: false } });
-    }
-
-    // There should always be two builders
-    else if (builders.length < 2) {
+    // There should always be four workers
+    if (workers.length < 2) {
 
         // Spawn a new one
-        let newName = 'Builder' + Game.time;
-        Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'builder'), newName, { memory: { role: 'builder', building: false } });
+        let newName = 'Worker' + Game.time;
+        Game.spawns['Spawn1'].spawnCreep(creepMaker(spawnEnergy, 'worker'), newName, { memory: { role: 'worker', } });
     }
 
     // If the spawn is spawning a creep
@@ -110,23 +99,15 @@ module.exports.loop = function () {
         if (creep.memory.role == 'harvester') {
 
             // Run the creep as one and iterate
-            miner.run(creep);
+            harvester.run(creep);
             continue
         }
 
-        // If the creep is an upgrader
-        if (creep.memory.role == 'upgrader') {
+        // If the creep is an worker
+        if (creep.memory.role == 'worker') {
 
             // Run the creep as one and iterate
-            upgrader.run(creep);
-            continue
-        }
-
-        // If the creep is an upgrader
-        if (creep.memory.role == 'builder') {
-
-            // Run the creep as one and iterate
-            builder.run(creep);
+            worker.run(creep);
             continue
         }
 
