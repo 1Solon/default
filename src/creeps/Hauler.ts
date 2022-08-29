@@ -1,8 +1,5 @@
-import { throws } from "assert";
-import { isUndefined } from "lodash";
-
 export class Hauler {
-  constructor(creep: HaulerCreep) {
+  constructor(creep: Creep) {
     // Find spawns in the room
     const spawns = creep.room.find(FIND_MY_SPAWNS);
 
@@ -146,22 +143,18 @@ export class Hauler {
 
       // Fill any towers that need filling
     } else if (towers.find(structure => structure.store[RESOURCE_ENERGY] < 1000) != undefined) {
+      let emptyTowers = towers.find(structure => structure.store[RESOURCE_ENERGY] < 1000) ?? null;
 
-      let emptyTowers = towers.find(structure => structure.store[RESOURCE_ENERGY] < 1000)
-      if (isUndefined(emptyTowers) == false){
+      if (emptyTowers != null) {
         // Try to transfer energy to the spawn. If it's not in range
-        if (creep.transfer(Game.getObjectById(emptyTowers.id), RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        if (creep.transfer(emptyTowers, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
           // Move to it
-          creep.moveTo(
-            Game.getObjectById(emptyTowers),
-            {
-              visualizePathStyle: { stroke: "#ffaa00" },
-              reusePath: 5
-            },
-          );
+          creep.moveTo(emptyTowers, {
+            visualizePathStyle: { stroke: "#ffaa00" },
+            reusePath: 5
+          });
         }
       }
-
 
       // Fill storage
     } else if (storages.length > 0) {
@@ -169,46 +162,46 @@ export class Hauler {
       try {
         // Gets the distance to all storages
         let closestEmptyStorage = [];
-        for (i in storages) {
+        for (const i in storages) {
           closestEmptyStorage.push(
             Math.max(Math.abs(creep.pos.x - storages[i].pos.x), Math.abs(creep.pos.y - storages[i].pos.y))
           );
         }
 
         let min = Infinity;
-        let minID;
-        for (i in closestEmptyStorage) {
+        let minID = null;
+        for (const i of closestEmptyStorage) {
           if (closestEmptyStorage[i] < min) {
             min = closestEmptyStorage[i];
             minID = i;
           }
         }
 
-        // Try to transfer energy to the storage. If it's not in range
-        if (creep.transfer(storages[minID], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-          // Move to it
-          creep.moveTo(
-            storages[minID],
-            {
-              visualizePathStyle: { stroke: "#ffaa00" }
-            },
-            { reusePath: 5 }
-          );
+        if (minID != null) {
+          // Try to transfer energy to the storage. If it's not in range
+          if (creep.transfer(storages[minID], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            // Move to it
+            creep.moveTo(storages[minID], {
+              visualizePathStyle: { stroke: "#ffaa00" },
+              reusePath: 5
+            });
+          }
         }
       } catch {
         console.log(Error);
       }
     } // Refill any active builders
-    else if (Game.getObjectById(emptiestWorker).store[RESOURCE_ENERGY] < 50) {
-      if (creep.transfer(Game.getObjectById(emptiestWorker), RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-        // Move to it
-        creep.moveTo(
-          Game.getObjectById(emptiestWorker),
-          {
-            visualizePathStyle: { stroke: "#ffaa00" }
-          },
-          { reusePath: 5 }
-        );
+    else if (emptiestWorker != null && emptiestWorker != undefined) {
+      let targetWorker = Game.getObjectById(emptiestWorker);
+
+      if (targetWorker != null) {
+        if (creep.transfer(targetWorker, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+          // Move to it
+          creep.moveTo(targetWorker, {
+            visualizePathStyle: { stroke: "#ffaa00" },
+            reusePath: 5
+          });
+        }
       }
     }
   }

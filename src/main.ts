@@ -1,26 +1,30 @@
 // Import screep modules
-import { harvester } from "creeps/Harvester";
-import { hauler } from "creeps/Hauler";
-import { worker } from "creeps/Worker";
-import { tower } from "creeps/Tower";
+import { Harvester as harvester } from "creeps/Harvester";
+import { Hauler as hauler } from "creeps/Hauler";
+import { Worker as worker } from "creeps/Worker";
+import { Tower as tower } from "creeps/Tower";
 
 // Import spawn modules
-import { constructionManager } from "spawns/ConstructionManager";
+import { ConstructionManager as constructionManager } from "spawns/ConstructionManager";
 
 // Import utility modules
 import { ErrorMapper } from "utils/ErrorMapper";
-import { creepMaker } from "utils/CreepBody";
+import { CreepBody as creepMaker } from "utils/CreepBody";
 
 
 export const loop = ErrorMapper.wrapLoop(() => {
-  // Get counts for creeps of each role
 
+  // Get counts for creeps of each role
   var harvesters = _.filter(Game.creeps, creep => creep.memory.role == "harvester");
   var workers = _.filter(Game.creeps, creep => creep.memory.role == "worker");
   var haulers = _.filter(Game.creeps, creep => creep.memory.role == "hauler");
 
+
   // Stores total energy capacity of the current room
   let spawnEnergy = Game.spawns["Spawn1"].room.energyAvailable;
+
+  // Gets all the spawns in the room
+  let sources = Game.spawns["Spawn1"].room.find(FIND_SOURCES)
 
   // Loop through each creep's name in Memory.creeps
   for (var creepName in Memory.creeps) {
@@ -50,8 +54,11 @@ export const loop = ErrorMapper.wrapLoop(() => {
     // Counts how many harvesters there are of each source
     for (const i in sources) {
       for (const j in harvesters) {
-        if (sources[i].id == harvesters[j].memory[target]) {
-          noOfMinersAtSources[i]++;
+        let creepMem = harvesters[j].memory.targetSource
+        if (creepMem) {
+          if (sources[i].id == creepMem) {
+            noOfMinersAtSources[i]++;
+          }
         }
       }
     }
@@ -61,13 +68,14 @@ export const loop = ErrorMapper.wrapLoop(() => {
       if (noOfMinersAtSources[i] < 1) {
         let newName = "Harvester" + Game.time;
         Game.spawns["Spawn1"].spawnCreep(creepMaker(spawnEnergy, "harvester"), newName, {
-          memory: { role: "harvester", target: sources[i].id }
+          memory: { role: "harvester", targetSource: sources[i].id }
         });
       }
     }
   }
   // There should always be four workers
-  if (workers.length < 2) {
+   if (workers.length < 2) {
+    console.log('hello')
     // Spawn a new one
     let newName = "Worker" + Game.time;
     Game.spawns["Spawn1"].spawnCreep(creepMaker(spawnEnergy, "worker"), newName, { memory: { role: "worker" } });
@@ -95,27 +103,27 @@ export const loop = ErrorMapper.wrapLoop(() => {
     // If the creep is a harvester
     if (creep.memory.role == "harvester") {
       // Run the creep as one and iterate
-      harvester.run(creep);
+      new harvester(creep);
       continue;
     }
 
     // If the creep is an worker
     if (creep.memory.role == "worker") {
       // Run the creep as one and iterate
-      worker.run(creep);
+      new worker(creep);
       continue;
     }
 
     // If the creep is a hauler
     if (creep.memory.role == "hauler") {
       // Run the creep as one and iterate
-      hauler.run(creep);
+      new hauler(creep);
       continue;
     }
   }
   // Starts the tower
-  tower.run(Game.spawns["Spawn1"].room);
+  new tower(Game.spawns["Spawn1"].room);
 
   // Runs the construction manager
-  constructionManager();
+  new constructionManager(Game.spawns["Spawn1"].room);
 });
