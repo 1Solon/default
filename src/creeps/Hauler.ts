@@ -81,12 +81,12 @@ export class Hauler {
         for (const i of closestStorage) {
           if (closestStorage[i] < min) {
             min = closestStorage[i];
-            minID = i;
+            minID = Number(i);
           }
         }
 
         // Try to transfer energy to the storage. If it's not in range
-        if (minID) {
+        if (minID || minID == 0) {
           if (creep.withdraw(allStorages[minID], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
             // Move to it
             creep.moveTo(allStorages[minID], {
@@ -120,15 +120,15 @@ export class Hauler {
 
         let min = Infinity;
         let minID;
-        for (const i of closestEmptyExtension) {
+        for (const i in closestEmptyExtension) {
           if (closestEmptyExtension[i] < min) {
             min = closestEmptyExtension[i];
-            minID = i;
+            minID = Number(i)
           }
         }
 
         // Try to transfer energy to the spawn. If it's not in range
-        if (minID) {
+        if (minID || minID == 0) {
           if (creep.transfer(extensions[minID], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
             // Move to it
             creep.moveTo(extensions[minID], {
@@ -169,15 +169,15 @@ export class Hauler {
         }
 
         let min = Infinity;
-        let minID = null;
+        let minID;
         for (const i of closestEmptyStorage) {
           if (closestEmptyStorage[i] < min) {
             min = closestEmptyStorage[i];
-            minID = i;
+            minID = Number(i);
           }
         }
 
-        if (minID != null) {
+        if (minID || minID == 0) {
           // Try to transfer energy to the storage. If it's not in range
           if (creep.transfer(storages[minID], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
             // Move to it
