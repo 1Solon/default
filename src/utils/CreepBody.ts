@@ -6,7 +6,6 @@ export function CreepBody(energy: number, roleName: String): BodyPartConstant[] 
     switch (roleName) {
       case "harvester":
         partBudget = Math.floor((energy - 100) / 100);
-        console.log(partBudget)
 
         // 10 work parts is optimal for a source
         if (partBudget > 10) {

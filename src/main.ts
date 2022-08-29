@@ -75,7 +75,6 @@ export const loop = ErrorMapper.wrapLoop(() => {
   }
   // There should always be four workers
    if (workers.length < 2) {
-    console.log('hello')
     // Spawn a new one
     let newName = "Worker" + Game.time;
     Game.spawns["Spawn1"].spawnCreep(creepMaker(spawnEnergy, "worker"), newName, { memory: { role: "worker" } });

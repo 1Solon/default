@@ -147,7 +147,7 @@ export class ConstructionManager {
                 if (roomTerrain[i].x % 2 == 0) {
                   spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
                 } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                  console.log(spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_TOWER));
+                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_TOWER);
                   noOfTowerSites++;
                 }
 
