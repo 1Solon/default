@@ -123,7 +123,7 @@ export class Hauler {
         for (const i in closestEmptyExtension) {
           if (closestEmptyExtension[i] < min) {
             min = closestEmptyExtension[i];
-            minID = Number(i)
+            minID = Number(i);
           }
         }
 
@@ -158,38 +158,20 @@ export class Hauler {
 
       // Fill storage
     } else if (storages.length > 0) {
-      // If there are no empty storages, catch undefined
-      try {
-        // Gets the distance to all storages
-        let closestEmptyStorage = [];
-        for (const i in storages) {
-          closestEmptyStorage.push(
-            Math.max(Math.abs(creep.pos.x - storages[i].pos.x), Math.abs(creep.pos.y - storages[i].pos.y))
-          );
-        }
+      let emptyStorages = storages.find(structure => structure.store[RESOURCE_ENERGY] < 1000);
 
-        let min = Infinity;
-        let minID;
-        for (const i of closestEmptyStorage) {
-          if (closestEmptyStorage[i] < min) {
-            min = closestEmptyStorage[i];
-            minID = Number(i);
-          }
+      if (emptyStorages != null) {
+        // Try to transfer energy to the spawn. If it's not in range
+        if (creep.transfer(emptyStorages, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+          // Move to it
+          creep.moveTo(emptyStorages, {
+            visualizePathStyle: { stroke: "#ffaa00" },
+            reusePath: 5
+          });
         }
-
-        if (minID || minID == 0) {
-          // Try to transfer energy to the storage. If it's not in range
-          if (creep.transfer(storages[minID], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-            // Move to it
-            creep.moveTo(storages[minID], {
-              visualizePathStyle: { stroke: "#ffaa00" },
-              reusePath: 5
-            });
-          }
-        }
-      } catch {
-        console.log(Error);
       }
+
+
     } // Refill any active builders
     else if (emptiestWorker != null && emptiestWorker != undefined) {
       let targetWorker = Game.getObjectById(emptiestWorker);

@@ -81,7 +81,7 @@ export class ConstructionManager {
     if (roadPath) {
       for (let i = 0; i < roadPath.length; i++) {
         if (i != roadPath.length) {
-          if (!(spawn.room.lookForAt(LOOK_TERRAIN, roadPath[i].x, roadPath[i].y).includes('wall'))) {
+          if (!spawn.room.lookForAt(LOOK_TERRAIN, roadPath[i].x, roadPath[i].y).includes("wall")) {
             Game.spawns["Spawn1"].room.createConstructionSite(roadPath[i].x, roadPath[i].y, STRUCTURE_ROAD);
           }
         }
@@ -89,7 +89,7 @@ export class ConstructionManager {
     }
 
     for (const i in spawnBound) {
-      if (spawnBound[i].terrain == "plain" || spawnBound[i].terrain == "swamp") {
+      if (spawnBound[i].terrain.includes("plain") || spawnBound[i].terrain.includes("swamp")) {
         if (spawn.room.lookForAt(LOOK_STRUCTURES, spawnBound[i].x, spawnBound[i].y).length == 0) {
           spawn.room.createConstructionSite(spawnBound[i].x, spawnBound[i].y, STRUCTURE_ROAD);
         }
@@ -104,7 +104,7 @@ export class ConstructionManager {
         // This is sadly needed to be checked twice, first to save CPU. Second so it actually stops once the buildable limit is hit
         if (noOfextensions + noOfextensionsSites < 30 + 1) {
           // If the room tile is a plain or swamp
-          if (roomTerrain[i].terrain == "plain" || roomTerrain[i].terrain == "swamp") {
+          if (roomTerrain[i].terrain.includes("plain") || roomTerrain[i].terrain.includes("swamp")) {
             // If the room tile does not already contain a building
             if (spawn.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
               // If the Y is even, check if X is even or odd. Build accordingly.
@@ -133,13 +133,13 @@ export class ConstructionManager {
 
     // If the number of turrets is less then the total number of turrets buildable
     // TODO: Hook up the hard-coded 1 to RCL level
-    else if (noOfTowers + noOfTowerSites < 2) {
+    if (noOfTowers + noOfTowerSites < 2) {
       // Iterate through a 5x5x5 cube around the spawn
       for (const i in roomTerrain) {
         // This is sadly needed to be checked twice, first to save CPU. Second so it actually stops once the buildable limit is hit
         if (noOfTowers + noOfTowerSites < 2 + 1) {
           // If the room tile is a plain or swamp
-          if (roomTerrain[i].terrain == "plain" || roomTerrain[i].terrain == "swamp") {
+          if (roomTerrain[i].terrain.includes("plain") || roomTerrain[i].terrain.includes("swamp")) {
             // If the room tile does not already contain a building
             if (spawn.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
               // If the Y is even, check if X is even or odd. Build accordingly.
@@ -168,13 +168,13 @@ export class ConstructionManager {
 
     // If the number of storages is less then the total number of storages buildable
     // TODO: Hook up the hard-coded 1 to RCL level
-    else if (noOfStorage + noOfStorageSites < 1) {
+    if (noOfStorage + noOfStorageSites < 1) {
       // Iterate through a 5x5x5 cube around the spawn
       for (const i in roomTerrain) {
         // This is sadly needed to be checked twice, first to save CPU. Second so it actually stops once the buildable limit is hit
         if (noOfStorage + noOfStorageSites < 1 + 1) {
           // If the room tile is a plain or swamp
-          if (roomTerrain[i].terrain == "plain" || roomTerrain[i].terrain == "swamp") {
+          if (roomTerrain[i].terrain.includes("plain") || roomTerrain[i].terrain.includes("swamp")) {
             // If the room tile does not already contain a building
             if (spawn.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
               // If the Y is even, check if X is even or odd. Build accordingly.
@@ -182,6 +182,7 @@ export class ConstructionManager {
                 if (roomTerrain[i].x % 2 == 0) {
                   spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
                 } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
+                  console.log(JSON.stringify(roomTerrain[i]))
                   spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_STORAGE);
                   noOfStorageSites++;
                 }
