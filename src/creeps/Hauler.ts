@@ -88,7 +88,7 @@ export class Hauler {
       filter: { structureType: STRUCTURE_TOWER }
     });
     const notFullTowers = _.filter(towers, function (i) {
-      return i.store[RESOURCE_ENERGY] < 1000;
+      return i.store[RESOURCE_ENERGY] < 600;
     });
 
     // If there are any towers that are not full
