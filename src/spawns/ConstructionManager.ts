@@ -1,6 +1,13 @@
 export class ConstructionManager {
+  // Stores the amount of buildable buildings
+  totalExtensions: number | undefined;
+  totalStorage: number | undefined;
+  totalTowers: number | undefined;
+
   constructor(room: Room) {
-    // Defines spawn
+    // Populates buildable building limits
+    this.getTotalBuildableBuildings(room);
+
     let spawn = room.find(FIND_MY_SPAWNS)[0];
 
     // Defines sources
@@ -98,31 +105,33 @@ export class ConstructionManager {
 
     // If the number of extensions is less then the total number of extensions buildable
     // TODO: Hook up the hard-coded 20 to RCL level
-    if (noOfextensions + noOfextensionsSites < 30) {
-      // Iterate through a 5x5x5 cube around the spawn
-      for (const i in roomTerrain) {
-        // This is sadly needed to be checked twice, first to save CPU. Second so it actually stops once the buildable limit is hit
-        if (noOfextensions + noOfextensionsSites < 30 + 1) {
-          // If the room tile is a plain or swamp
-          if (roomTerrain[i].terrain.includes("plain") || roomTerrain[i].terrain.includes("swamp")) {
-            // If the room tile does not already contain a building
-            if (spawn.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
-              // If the Y is even, check if X is even or odd. Build accordingly.
-              if (roomTerrain[i].y % 2 == 0) {
-                if (roomTerrain[i].x % 2 == 0) {
-                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
-                } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_EXTENSION);
-                  noOfextensionsSites++;
-                }
+    if (this.totalExtensions) {
+      if (noOfextensions + noOfextensionsSites < this.totalExtensions) {
+        // Iterate through a 5x5x5 cube around the spawn
+        for (const i in roomTerrain) {
+          // This is sadly needed to be checked twice, first to save CPU. Second so it actually stops once the buildable limit is hit
+          if (noOfextensions + noOfextensionsSites < this.totalExtensions + 1) {
+            // If the room tile is a plain or swamp
+            if (roomTerrain[i].terrain.includes("plain") || roomTerrain[i].terrain.includes("swamp")) {
+              // If the room tile does not already contain a building
+              if (spawn.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
+                // If the Y is even, check if X is even or odd. Build accordingly.
+                if (roomTerrain[i].y % 2 == 0) {
+                  if (roomTerrain[i].x % 2 == 0) {
+                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
+                  } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
+                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_EXTENSION);
+                    noOfextensionsSites++;
+                  }
 
-                // If the Y is odd, check if X is even or odd. Build accordingly.
-              } else if (Math.abs(roomTerrain[i].y % 2) == 1) {
-                if (roomTerrain[i].x % 2 == 0) {
-                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_EXTENSION);
-                  noOfextensionsSites++;
-                } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
+                  // If the Y is odd, check if X is even or odd. Build accordingly.
+                } else if (Math.abs(roomTerrain[i].y % 2) == 1) {
+                  if (roomTerrain[i].x % 2 == 0) {
+                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_EXTENSION);
+                    noOfextensionsSites++;
+                  } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
+                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
+                  }
                 }
               }
             }
@@ -133,31 +142,33 @@ export class ConstructionManager {
 
     // If the number of turrets is less then the total number of turrets buildable
     // TODO: Hook up the hard-coded 1 to RCL level
-    if (noOfTowers + noOfTowerSites < 2) {
-      // Iterate through a 5x5x5 cube around the spawn
-      for (const i in roomTerrain) {
-        // This is sadly needed to be checked twice, first to save CPU. Second so it actually stops once the buildable limit is hit
-        if (noOfTowers + noOfTowerSites < 2 + 1) {
-          // If the room tile is a plain or swamp
-          if (roomTerrain[i].terrain.includes("plain") || roomTerrain[i].terrain.includes("swamp")) {
-            // If the room tile does not already contain a building
-            if (spawn.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
-              // If the Y is even, check if X is even or odd. Build accordingly.
-              if (roomTerrain[i].y % 2 == 0) {
-                if (roomTerrain[i].x % 2 == 0) {
-                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
-                } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_TOWER);
-                  noOfTowerSites++;
-                }
+    if (this.totalTowers) {
+      if (noOfTowers + noOfTowerSites < this.totalTowers) {
+        // Iterate through a 5x5x5 cube around the spawn
+        for (const i in roomTerrain) {
+          // This is sadly needed to be checked twice, first to save CPU. Second so it actually stops once the buildable limit is hit
+          if (noOfTowers + noOfTowerSites < this.totalTowers + 1) {
+            // If the room tile is a plain or swamp
+            if (roomTerrain[i].terrain.includes("plain") || roomTerrain[i].terrain.includes("swamp")) {
+              // If the room tile does not already contain a building
+              if (spawn.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
+                // If the Y is even, check if X is even or odd. Build accordingly.
+                if (roomTerrain[i].y % 2 == 0) {
+                  if (roomTerrain[i].x % 2 == 0) {
+                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
+                  } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
+                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_TOWER);
+                    noOfTowerSites++;
+                  }
 
-                // If the Y is odd, check if X is even or odd. Build accordingly.
-              } else if (Math.abs(roomTerrain[i].y % 2) == 1) {
-                if (roomTerrain[i].x % 2 == 0) {
-                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_TOWER);
-                  noOfTowerSites++;
-                } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
+                  // If the Y is odd, check if X is even or odd. Build accordingly.
+                } else if (Math.abs(roomTerrain[i].y % 2) == 1) {
+                  if (roomTerrain[i].x % 2 == 0) {
+                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_TOWER);
+                    noOfTowerSites++;
+                  } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
+                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
+                  }
                 }
               }
             }
@@ -182,7 +193,7 @@ export class ConstructionManager {
                 if (roomTerrain[i].x % 2 == 0) {
                   spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
                 } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                  console.log(JSON.stringify(roomTerrain[i]))
+                  console.log(JSON.stringify(roomTerrain[i]));
                   spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_STORAGE);
                   noOfStorageSites++;
                 }
@@ -199,6 +210,69 @@ export class ConstructionManager {
             }
           }
         }
+      }
+    }
+  }
+
+  // Based on the Room Control Level- this will populate the variables that store the max amount of X building that can be made
+  getTotalBuildableBuildings(room: Room): void {
+    let roomLevel = room.controller?.level;
+
+    if (roomLevel) {
+      switch (roomLevel) {
+        case 0:
+          this.totalExtensions = 0;
+          this.totalStorage = 0;
+          this.totalTowers = 0;
+          break;
+
+        case 1:
+          this.totalExtensions = 0;
+          this.totalStorage = 0;
+          this.totalTowers = 0;
+          break;
+
+        case 2:
+          this.totalExtensions = 5;
+          this.totalStorage = 0;
+          this.totalTowers = 0;
+          break;
+
+        case 3:
+          this.totalExtensions = 10;
+          this.totalStorage = 0;
+          this.totalTowers = 1;
+          break;
+
+        case 4:
+          this.totalExtensions = 20;
+          this.totalStorage = 1;
+          this.totalTowers = 1;
+          break;
+
+        case 5:
+          this.totalExtensions = 30;
+          this.totalStorage = 1;
+          this.totalTowers = 2;
+          break;
+
+        case 6:
+          this.totalExtensions = 40;
+          this.totalStorage = 1;
+          this.totalTowers = 2;
+          break;
+
+        case 7:
+          this.totalExtensions = 50;
+          this.totalStorage = 1;
+          this.totalTowers = 3;
+          break;
+
+        case 8:
+          this.totalExtensions = 60;
+          this.totalStorage = 1;
+          this.totalTowers = 6;
+          break;
       }
     }
   }
