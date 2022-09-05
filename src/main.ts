@@ -67,17 +67,23 @@ export const loop = ErrorMapper.wrapLoop(() => {
     for (const i in noOfMinersAtSources) {
       if (noOfMinersAtSources[i] < 1) {
         let newName = "Harvester" + Game.time;
-        Game.spawns["Spawn1"].spawnCreep(creepMaker(spawnEnergy, "harvester"), newName, {
-          memory: { role: "harvester", targetSource: sources[i].id }
-        });
+        if (spawnEnergy >= 300) {
+          Game.spawns["Spawn1"].spawnCreep(creepMaker(spawnEnergy, "harvester"), newName, {
+            memory: { role: "harvester", targetSource: sources[i].id }
+          });
+        }
       }
     }
   }
-  // There should always be four workers
-   if (workers.length < 2) {
-    // Spawn a new one
-    let newName = "Worker" + Game.time;
-    Game.spawns["Spawn1"].spawnCreep(creepMaker(spawnEnergy, "worker"), newName, { memory: { role: "worker" } });
+
+  // TODO: Bandaid fix, prevents workers out-building harvesters
+  if (harvesters.length >= 2) {
+    // There should always be four workers
+    if (workers.length < 2) {
+      // Spawn a new one
+      let newName = "Worker" + Game.time;
+      Game.spawns["Spawn1"].spawnCreep(creepMaker(spawnEnergy, "worker"), newName, { memory: { role: "worker" } });
+    }
   }
 
   // If the spawn is spawning a creep
