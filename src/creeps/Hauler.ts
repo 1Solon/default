@@ -170,8 +170,9 @@ export class Hauler {
   // Handles worker refill
   refillWorker(creep: Creep): boolean {
     // Find empty workers
-    const workers: Creep[] = creep.room.find(FIND_MY_CREEPS, {
-      filter: { Memory: "Worker" }
+    const creeps: Creep[] = creep.room.find(FIND_MY_CREEPS);
+    const workers = creeps.filter(function (i) {
+      return i.memory.role == 'worker'
     });
     const notFullWorkers = _.filter(workers, function (i) {
       return i.store[RESOURCE_ENERGY] < i.store.getCapacity();
