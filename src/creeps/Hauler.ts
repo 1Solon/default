@@ -20,6 +20,9 @@ export class Hauler {
   refillSpawn(creep: Creep): boolean {
     const spawns = creep.room.find(FIND_MY_SPAWNS);
 
+    // Display the state of the hauler
+    creep.say("☀️", true);
+
     // Grab all not-full spawns
     const notFullSpawns = _.filter(spawns, function (i) {
       return i.store[RESOURCE_ENERGY] < 300;
@@ -49,6 +52,9 @@ export class Hauler {
 
   // Refills any empty extensions
   refillExtension(creep: Creep): boolean {
+    // Display the state of the hauler
+    creep.say("⭐", true);
+
     // Find empty extensions
     const extensions: StructureExtension[] = creep.room.find(FIND_MY_STRUCTURES, {
       filter: { structureType: STRUCTURE_EXTENSION }
@@ -83,6 +89,9 @@ export class Hauler {
 
   // Refills any empty towers
   refillTowers(creep: Creep): boolean {
+    // Display the state of the hauler
+    creep.say("🔫", true);
+
     // Find empty towers
     const towers: StructureTower[] = creep.room.find(FIND_MY_STRUCTURES, {
       filter: { structureType: STRUCTURE_TOWER }
@@ -117,6 +126,9 @@ export class Hauler {
 
   // Refills Storages
   refillStorage(creep: Creep): boolean {
+    // Display the state of the hauler
+    creep.say("📦", true);
+
     // Find empty Storages
     const storages: StructureStorage[] = creep.room.find(FIND_MY_STRUCTURES, {
       filter: { structureType: STRUCTURE_STORAGE }
@@ -133,7 +145,7 @@ export class Hauler {
       if (creep.store.energy == 0) {
         // Find energy on the ground
         const droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {
-          filter: resource => resource.resourceType == RESOURCE_ENERGY && resource.amount > 50
+          filter: resource => resource.resourceType == RESOURCE_ENERGY && resource.amount > creep.store.getFreeCapacity()
         });
 
         // Find the closest dropped energy
@@ -169,10 +181,13 @@ export class Hauler {
 
   // Handles worker refill
   refillWorker(creep: Creep): boolean {
+    // Display the state of the hauler
+    creep.say("👷", true);
+
     // Find empty workers
     const creeps: Creep[] = creep.room.find(FIND_MY_CREEPS);
     const workers = creeps.filter(function (i) {
-      return i.memory.role == 'worker'
+      return i.memory.role == "worker";
     });
     const notFullWorkers = _.filter(workers, function (i) {
       return i.store[RESOURCE_ENERGY] < i.store.getCapacity();
@@ -205,53 +220,37 @@ export class Hauler {
   retrieveEnergy(creep: Creep): boolean {
     // Determine if the Hauler is empty
     if (creep.store.energy == 0) {
-      // Determine if there are any Storages with energy
-      let storages: StructureStorage[] = Game.spawns["Spawn1"].room.find(FIND_MY_STRUCTURES, {
-        filter: { structureType: STRUCTURE_STORAGE }
-      });
-      storages = _.filter(storages, function (i) {
-        return i.store[RESOURCE_ENERGY] > 0;
+      // Find energy on the ground
+      const droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {
+        filter: resource => resource.resourceType == RESOURCE_ENERGY && resource.amount > creep.store.getFreeCapacity()
       });
 
-      //  If there are any Storage's with energy
-      if (storages.length > 0) {
-        // Find the closest storage
-        const closestStorage = creep.pos.findClosestByRange(storages);
+      // Find the closest dropped energy
+      const closestDroppedEnergy = creep.pos.findClosestByRange(droppedEnergy);
 
-        // Try to withdraw from the storage, if not in range
-        if (closestStorage) {
-          if (creep.withdraw(closestStorage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-            // Move to it
-            creep.moveTo(closestStorage, {
-              visualizePathStyle: { stroke: "#ffaa00" },
-              reusePath: 5
-            });
-          }
-        }
-      }
-      // If there are not, find the closest dropped energy instead
-      else {
-        // Find energy on the ground
-        const droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {
-          filter: resource => resource.resourceType == RESOURCE_ENERGY && resource.amount > 50
-        });
-
-        // Find the closest dropped energy
-        const closestDroppedEnergy = creep.pos.findClosestByRange(droppedEnergy);
-
-        // Try to pickup the energy. If it's not in range
-        if (closestDroppedEnergy) {
-          if (creep.pickup(closestDroppedEnergy) == ERR_NOT_IN_RANGE) {
-            // Move to it
-            creep.moveTo(closestDroppedEnergy, {
-              visualizePathStyle: { stroke: "#ffaa00" },
-              reusePath: 1
-            });
-          }
+      // Try to pickup the energy. If it's not in range
+      if (closestDroppedEnergy) {
+        if (creep.pickup(closestDroppedEnergy) == ERR_NOT_IN_RANGE) {
+          // Move to it
+          creep.moveTo(closestDroppedEnergy, {
+            visualizePathStyle: { stroke: "#ffaa00" },
+            reusePath: 1
+          });
         }
       }
       return false;
     } else {
+      // Try to withdraw from the storage, if not in range
+      const storage = creep.room.storage;
+      if (storage) {
+        if (creep.withdraw(storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+          // Move to it
+          creep.moveTo(storage, {
+            visualizePathStyle: { stroke: "#ffaa00" },
+            reusePath: 5
+          });
+        }
+      }
       return true;
     }
   }

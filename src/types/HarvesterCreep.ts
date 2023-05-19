@@ -1,6 +1,6 @@
 interface HarvesterMemory extends CreepMemory {
 
-    targetSource: Source
+    targetSource: Id<Source>
 
 }
 

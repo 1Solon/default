@@ -1,6 +1,6 @@
 interface HaulerMemory extends CreepMemory {
 
-    targetSource: Source
+    targetSource: Id<Source>
 
 }
 

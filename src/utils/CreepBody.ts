@@ -8,8 +8,8 @@ export function CreepBody(energy: number, roleName: String): BodyPartConstant[] 
         partBudget = Math.floor((energy - 100) / 100);
 
         // 10 work parts is optimal for a source
-        if (partBudget > 10) {
-          partBudget = 10;
+        if (partBudget > 5) {
+          partBudget = 5;
         }
 
         for (let i = 0; i < partBudget; i++) {

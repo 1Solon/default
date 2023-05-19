@@ -10,21 +10,26 @@ import { ConstructionManager as constructionManager } from "spawns/ConstructionM
 // Import utility modules
 import { ErrorMapper } from "utils/ErrorMapper";
 import { CreepBody as creepMaker } from "utils/CreepBody";
+import { calculateTotalEnergyMinedPerTick } from "utils/TotalEnergyMinedPerTick";
 
 
 export const loop = ErrorMapper.wrapLoop(() => {
-
   // Get counts for creeps of each role
   var harvesters = _.filter(Game.creeps, creep => creep.memory.role == "harvester");
   var workers = _.filter(Game.creeps, creep => creep.memory.role == "worker");
   var haulers = _.filter(Game.creeps, creep => creep.memory.role == "hauler");
 
-
   // Stores total energy capacity of the current room
   let spawnEnergy = Game.spawns["Spawn1"].room.energyAvailable;
 
   // Gets all the spawns in the room
-  let sources = Game.spawns["Spawn1"].room.find(FIND_SOURCES)
+  let sources = Game.spawns["Spawn1"].room.find(FIND_SOURCES);
+
+  // Calculate the total energy mined per tick
+  let totalEnergyMinedPerTick = calculateTotalEnergyMinedPerTick();
+
+  // Each worker can contribute 5 units of energy per tick towards building. So, calculate how many workers the total energy mined can support.
+  let maxWorkersForBuilding = Math.floor(totalEnergyMinedPerTick / 5);
 
   // Loop through each creep's name in Memory.creeps
   for (var creepName in Memory.creeps) {
@@ -36,8 +41,8 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
-  // There should always be a hauler for every excavator creep
-  if (haulers.length < harvesters.length) {
+  // There should always be a hauler for every worker creep
+  if (haulers.length < workers.length) {
     // Spawn a new one
     let newName = "Hauler" + Game.time;
     Game.spawns["Spawn1"].spawnCreep(creepMaker(spawnEnergy, "hauler"), newName, { memory: { role: "hauler" } });
@@ -54,7 +59,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
     // Counts how many harvesters there are of each source
     for (const i in sources) {
       for (const j in harvesters) {
-        let creepMem = harvesters[j].memory.targetSource
+        let creepMem = harvesters[j].memory.targetSource;
         if (creepMem) {
           if (sources[i].id == creepMem) {
             noOfMinersAtSources[i]++;
@@ -78,11 +83,13 @@ export const loop = ErrorMapper.wrapLoop(() => {
 
   // TODO: Bandaid fix, prevents workers out-building harvesters
   if (harvesters.length >= 2) {
-    // There should always be four workers
-    if (workers.length < 2) {
-      // Spawn a new one
+    // If there are less workers than the max number, spawn new ones
+    if (workers.length < maxWorkersForBuilding) {
+      // Spawn a new worker with as many sets of parts as we can afford
       let newName = "Worker" + Game.time;
-      Game.spawns["Spawn1"].spawnCreep(creepMaker(spawnEnergy, "worker"), newName, { memory: { role: "worker" } });
+      Game.spawns["Spawn1"].spawnCreep(creepMaker(spawnEnergy, "worker"), newName, {
+        memory: { role: "worker" }
+      });
     }
   }
 
@@ -131,4 +138,8 @@ export const loop = ErrorMapper.wrapLoop(() => {
 
   // Runs the construction manager
   new constructionManager(Game.spawns["Spawn1"].room);
+
+  // Usage
+  console.log("Amount of energy mined a tick: ", totalEnergyMinedPerTick);
+  console.log("Total amount of supported workers: ", maxWorkersForBuilding);
 });
