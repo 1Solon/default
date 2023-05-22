@@ -52,7 +52,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
   }
 
   // Wait until the spawn is full of passivly generated energy before starting a build
-  if (Game.spawns["Spawn1"].store.energy >= 300 || spawn.room.controller?.level! < 2 ) {
+  if (Game.spawns["Spawn1"].store.energy >= 300 || spawn.room.controller?.level! < 4 ) {
     // If there is not enough haulers per resource zone, build them
     if (harvesters.length < sources.length * 2) {
       // Creates a counting array of the same size as sources
@@ -77,7 +77,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
       for (const i in noOfMinersAtSources) {
         if (noOfMinersAtSources[i] < 1) {
           let newName = "Harvester" + Game.time;
-          if (spawnEnergy >= 300) {
+          if (spawnEnergy >= 300 || spawn.room.controller?.level! < 4 ) {
             Game.spawns["Spawn1"].spawnCreep(creepMaker(spawnEnergy, "harvester"), newName, {
               memory: { role: "harvester", targetSource: sources[i].id }
             });
