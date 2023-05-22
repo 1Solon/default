@@ -4,19 +4,20 @@ export function CreepBody(energy: number, roleName: String): BodyPartConstant[] 
 
   switch (roleName) {
     case "harvester":
-      partBudget = Math.floor((energy - 150) / 100);
+      partBudget = Math.floor((energy - 200) / 150);
 
       // 10 work parts is optimal for a source
-      if (partBudget > 5) {
-        partBudget = 5;
+      if (partBudget > 4) {
+        partBudget = 4;
       }
 
       for (let i = 0; i < partBudget; i++) {
         body.push(WORK);
+        body.push(MOVE)
       }
 
       // Pushes two move objects
-      body.push(MOVE);
+      body.push(WORK);
       body.push(CARRY);
       body.push(MOVE);
 
