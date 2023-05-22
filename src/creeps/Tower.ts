@@ -6,7 +6,12 @@ export class Tower {
     for (let i = 0; i < towers.length; i++) {
       let tower = towers[i];
 
-      if (tower.energy > 500) {
+      if (hostiles.length > 0) {
+        let closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+        if (closestHostile) {
+          tower.attack(closestHostile);
+        }
+      } else if (tower.store[RESOURCE_ENERGY] > 500) {
         let closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
           filter: structure => structure.hits < (structure.hitsMax < 50000 ? structure.hitsMax : 50000)
         });
@@ -16,16 +21,10 @@ export class Tower {
             closestDamagedStructure.hits <
             (closestDamagedStructure.hitsMax < 50000 ? closestDamagedStructure.hitsMax : 50000)
           ) {
-            if (tower.energy > 500) {
+            if (tower.store[RESOURCE_ENERGY] > 500) {
               tower.repair(closestDamagedStructure);
             }
           }
-        }
-      }
-      if (hostiles.length > 0) {
-        let closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
-        if (closestHostile) {
-          tower.attack(closestHostile);
         }
       }
     }
