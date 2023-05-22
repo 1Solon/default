@@ -1,27 +1,35 @@
 export class Worker {
   constructor(creep: Creep) {
     if (this.retrieveEnergy(creep)) {
-      // If the creep is full, try to find an active construction project to work on
-      if (creep.room.find(FIND_CONSTRUCTION_SITES).length > 0) {
-        // Try to finish a construction site, if not in range?
-        const target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
-        if (target) {
-          if (creep.build(target) == ERR_NOT_IN_RANGE) {
-            // Move into range
-            creep.moveTo(target, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
+      // Check if there is a storage with more than 1000 energy
+      const storage = creep.room.storage;
+      if (!storage || (storage && storage.store[RESOURCE_ENERGY] > 1000)) {
+        // If the creep is full, try to find an active construction project to work on
+        if (creep.room.find(FIND_CONSTRUCTION_SITES).length > 0) {
+          // Try to finish a construction site, if not in range
+          const target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
+          if (target) {
+            if (creep.build(target) == ERR_NOT_IN_RANGE) {
+              // Move into range
+              creep.moveTo(target, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
+            }
+          }
+        } else {
+          let controller = creep.room.controller;
+          if (controller) {
+            // Try to upgrade the controller. If not in range
+            if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
+              // Move to it
+              creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
+            }
           }
         }
-
-        // If the creep is full and there are no construction projects, upgrade the controller
-      } else {
+        // If storage exists and has less than 1000 energy then move close to the room controller and wait there
+      } else if (storage && storage.store[RESOURCE_ENERGY] < 1000) {
         let controller = creep.room.controller;
-
         if (controller) {
-          // Try to upgrade the controller. If not in range
-          if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
-            // Move to it
-            creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
-          }
+          // Move to it
+          creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
         }
       }
     }
@@ -55,7 +63,7 @@ export class Worker {
           }
         }
       }
-      // If there are not, find the closest dropped energy instead
+      // If there are not, find the closest dropped energy instead, this should try not to compete with the Haulers at less then RCL 2
       else {
         // Find energy on the ground
         const droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {
@@ -66,7 +74,7 @@ export class Worker {
         const closestDroppedEnergy = creep.pos.findClosestByRange(droppedEnergy);
 
         // Try to pickup the energy. If it's not in range
-        if (closestDroppedEnergy) {
+        if (closestDroppedEnergy && creep.room.controller?.level! > 1) {
           if (creep.pickup(closestDroppedEnergy) == ERR_NOT_IN_RANGE) {
             // Move to it
             creep.moveTo(closestDroppedEnergy, {
