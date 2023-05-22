@@ -1,6 +1,6 @@
 export class Worker {
   constructor(creep: Creep) {
-    if (this.retrieveEnergy(creep)) {
+    if (this.retrieveEnergy(creep, false)) {
       // Check if there is a storage with more than 1000 energy
       const storage = creep.room.storage;
       if (!storage || (storage && storage.store[RESOURCE_ENERGY] > 1000)) {
@@ -36,57 +36,71 @@ export class Worker {
   }
 
   // Handles energy refill
-  retrieveEnergy(creep: Creep): boolean {
+  retrieveEnergy(creep: Creep, skipStorage: Boolean): boolean {
+    const storage = creep.room.storage;
+
+    // Find the closest container
+    const allContainers: StructureContainer[] = creep.room.find(FIND_STRUCTURES, {
+      filter: { structureType: STRUCTURE_CONTAINER }
+    });
+
+    // Find containers that have enough energy to fill the creep
+    const containers = _.filter(allContainers, function (i) {
+      return i.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity();
+    });
+
+    // Find the closest container
+    const closestContainer = creep.pos.findClosestByRange(containers);
+
     // Determine if the Hauler is empty
     if (creep.store.energy == 0) {
-      // Determine if there are any Storages with energy
-      let storages: StructureStorage[] = Game.spawns["Spawn1"].room.find(FIND_MY_STRUCTURES, {
-        filter: { structureType: STRUCTURE_STORAGE }
-      });
-      storages = _.filter(storages, function (i) {
-        return i.store[RESOURCE_ENERGY] > 0;
-      });
-
-      //  If there are any Storage's with energy
-      if (storages.length > 0) {
-        // Find the closest storage
-        const closestStorage = creep.pos.findClosestByRange(storages);
-
-        // Try to withdraw from the storage, if not in range
-        if (closestStorage) {
-          if (creep.withdraw(closestStorage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-            // Move to it
-            creep.moveTo(closestStorage, {
-              visualizePathStyle: { stroke: "#ffaa00" },
-              reusePath: 5
-            });
-          }
+      // If a storage exists, and we're not skipping it
+      if (storage != undefined && storage.store.energy > creep.store.getFreeCapacity() && !skipStorage) {
+        if (creep.withdraw(storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+          // Move to it
+          creep.moveTo(storage, {
+            visualizePathStyle: { stroke: "#ffaa00" },
+            reusePath: 0
+          });
         }
+        return false;
       }
-      // If there are not, find the closest dropped energy instead, this should try not to compete with the Haulers at less then RCL 2
+
+      // Pickup energy from a container
+      else if (closestContainer != undefined && closestContainer.store.energy > creep.store.getFreeCapacity()) {
+        if (creep.withdraw(closestContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+          // Move to it
+          creep.moveTo(closestContainer, {
+            visualizePathStyle: { stroke: "#ffaa00" },
+            reusePath: 0
+          });
+        }
+        return false;
+      }
+
+      // Find energy on the ground
       else {
-        // Find energy on the ground
         const droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {
-          filter: resource => resource.resourceType == RESOURCE_ENERGY && resource.amount > 50
+          filter: resource =>
+            resource.resourceType == RESOURCE_ENERGY && resource.amount > creep.store.getFreeCapacity()
         });
 
         // Find the closest dropped energy
         const closestDroppedEnergy = creep.pos.findClosestByRange(droppedEnergy);
 
         // Try to pickup the energy. If it's not in range
-        if (closestDroppedEnergy && creep.room.controller?.level! > 1) {
+        if (closestDroppedEnergy) {
           if (creep.pickup(closestDroppedEnergy) == ERR_NOT_IN_RANGE) {
             // Move to it
             creep.moveTo(closestDroppedEnergy, {
               visualizePathStyle: { stroke: "#ffaa00" },
-              reusePath: 1
+              reusePath: 0
             });
           }
         }
+        return false;
       }
-      return false;
-    } else {
-      return true;
     }
+    return true;
   }
 }
