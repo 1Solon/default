@@ -66,7 +66,9 @@ export class ConstructionManager {
     }).length;
 
     // Build containers on harvesters
-    this.placeContainerOnHarvester(room);
+    if (room.controller?.level! >= 3){
+      this.placeContainerOnHarvester(room);
+    }
 
     // Finds the path to all availible sources and roomcontrollers, then builds roads to them
     if (room.controller?.level! >= 2) {
@@ -87,7 +89,7 @@ export class ConstructionManager {
       let roomControllerPos = room.controller?.pos;
       let roadPath;
       if (roomControllerPos) {
-        roadPath = Game.spawns["Spawn1"].pos.findPathTo(roomControllerPos, {
+        roadPath = spawn.pos.findPathTo(roomControllerPos, {
           maxOps: 500,
           ignoreCreeps: true,
           plainCost: 1,
@@ -101,7 +103,7 @@ export class ConstructionManager {
         for (let i = 0; i < roadPath.length; i++) {
           if (i != roadPath.length) {
             if (!spawn.room.lookForAt(LOOK_TERRAIN, roadPath[i].x, roadPath[i].y).includes("wall")) {
-              Game.spawns["Spawn1"].room.createConstructionSite(roadPath[i].x, roadPath[i].y, STRUCTURE_ROAD);
+              spawn.room.createConstructionSite(roadPath[i].x, roadPath[i].y, STRUCTURE_ROAD);
             }
           }
         }
