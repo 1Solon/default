@@ -31,11 +31,17 @@ export class RoomManager {
     let workerCost = calculateConsumedEnergyPerWorker();
 
     // Using totalEnergyMinedPerTick and totalEnergyConsumedPerTick, calculate the max number of workers that can be supported
-    // Overide this logic if there is any active construcion sites
     let maxWorkersForBuilding = Math.floor(totalEnergyMinedPerTick / workerCost);
+    // If there is active construction projects, hard-code the max workers to 2
     if (spawn.room.find(FIND_CONSTRUCTION_SITES).length > 0) {
-      maxWorkersForBuilding = 1;
+      maxWorkersForBuilding = 2;
     }
+
+    // Get exits from the spawn room
+    let exits = Game.map.describeExits(spawn.room.name);
+
+    // Get an array of room names
+    let roomNames = Object.values(exits);
 
     // Loop through each creep's name in Memory.creeps
     for (var creepName in Memory.creeps) {
@@ -84,6 +90,15 @@ export class RoomManager {
 
       // TODO: Bandaid fix, prevents workers out-building harvesters
       if (harvesters.length >= 2) {
+        // Ensure that there's always a dedicated upgrader
+        const dedicatedUpgrader = _.find(Game.creeps, creep => creep.memory.state == "dedicatedUpgrader");
+        if (!dedicatedUpgrader) {
+          let newName = "Upgrader" + Game.time;
+          spawn.spawnCreep(creepMaker(spawnEnergy, "worker"), newName, {
+            memory: { role: "worker", state: "dedicatedUpgrader" }
+          });
+        }
+
         // If there are less workers than the max number, spawn new ones
         if (workers.length < maxWorkersForBuilding) {
           // Spawn a new worker with as many sets of parts as we can afford
@@ -105,14 +120,8 @@ export class RoomManager {
 
     // Do not spawn these unless there is base eco
     if (haulers.length >= 2 && harvesters.length >= 2) {
-      // If there are less than 4 remote harvesters, spawn a new one
-      if (_.filter(Game.creeps, creep => creep.memory.role == "remoteHarvester").length < 4) {
-        // Get exits from the spawn room
-        let exits = Game.map.describeExits(spawn.room.name);
-
-        // Get an array of room names
-        let roomNames = Object.values(exits);
-
+      // If there are less than 2 remote harvesters per exit, spawn a new one
+      if (_.filter(Game.creeps, creep => creep.memory.role == "remoteHarvester").length < roomNames.length * 2) {
         // Choose a random room
         let targetRoom = roomNames[Math.floor(Math.random() * roomNames.length)];
 
