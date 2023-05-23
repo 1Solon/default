@@ -31,7 +31,11 @@ export class RoomManager {
     let workerCost = calculateConsumedEnergyPerWorker();
 
     // Using totalEnergyMinedPerTick and totalEnergyConsumedPerTick, calculate the max number of workers that can be supported
+    // Overide this logic if there is any active construcion sites
     let maxWorkersForBuilding = Math.floor(totalEnergyMinedPerTick / workerCost);
+    if (spawn.room.find(FIND_CONSTRUCTION_SITES).length > 0) {
+      maxWorkersForBuilding = 1;
+    }
 
     // Loop through each creep's name in Memory.creeps
     for (var creepName in Memory.creeps) {
