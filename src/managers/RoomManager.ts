@@ -1,10 +1,4 @@
-import { Harvester } from "creeps/Harvester";
-import { Hauler } from "creeps/Hauler";
-import { Worker } from "creeps/Worker";
 import { Tower } from "creeps/Tower";
-import { RemoteHarvester } from "creeps/RemoteHarvester";
-import { Warrior } from "creeps/Warrior";
-import { ControllerKiller } from "creeps/ControllerKiller";
 
 // Import spawn modules
 import { ConstructionManager as constructionManager } from "managers/ConstructionManager";
@@ -98,76 +92,80 @@ export class RoomManager {
     }
 
     // There should always be a hauler for every harvester creep
+    // We should only start making haulers when we have extensions
     if (haulers.length < harvesters.length) {
       // Spawn a new one
       let newName = "Hauler" + Game.time;
       spawn.spawnCreep(creepMaker(spawnEnergy, "hauler"), newName, { memory: { role: "hauler" } });
     }
 
-    // If there are less than 4 remote harvesters, spawn a new one
-    if (_.filter(Game.creeps, creep => creep.memory.role == "remoteHarvester").length < 4) {
-      // Get exits from the spawn room
-      let exits = Game.map.describeExits(spawn.room.name);
+    // Do not spawn these unless there is base eco
+    if (haulers.length >= 2 && harvesters.length >= 2) {
+      // If there are less than 4 remote harvesters, spawn a new one
+      if (_.filter(Game.creeps, creep => creep.memory.role == "remoteHarvester").length < 4) {
+        // Get exits from the spawn room
+        let exits = Game.map.describeExits(spawn.room.name);
 
-      // Get an array of room names
-      let roomNames = Object.values(exits);
+        // Get an array of room names
+        let roomNames = Object.values(exits);
 
-      // Choose a random room
-      let targetRoom = roomNames[Math.floor(Math.random() * roomNames.length)];
+        // Choose a random room
+        let targetRoom = roomNames[Math.floor(Math.random() * roomNames.length)];
 
-      // Spawn a new remote harvester with the home room and target room in its memory
-      let newName = "RemoteHarvester" + Game.time;
-      spawn.spawnCreep(creepMaker(spawnEnergy, "remoteHarvester"), newName, {
-        memory: { role: "remoteHarvester", home: spawn.room.name, target: targetRoom, state: "harvesting" }
-      });
-    }
-
-    // If a flag called "basicAttack" exists, spawn four warriors to attack the room
-    if (Game.flags["basicAttack"]) {
-      // Calculate the number of warrior creeps
-      const numWarriors = _.filter(Game.creeps, creep => creep.memory.role == "Warrior").length;
-      const leader = _.find(Game.creeps, creep => creep.memory.role == "Warrior" && creep.memory.leader);
-
-      // Check if it's time to spawn the leader
-      if (!leader && numWarriors === 3) {
-        // Spawn the leader
-        let newName = "WarriorLeader" + Game.time;
-        const warrior = creepMaker(spawnEnergy, "WarriorBlock2");
-        spawn.spawnCreep(warrior, newName, {
-          memory: { role: "Warrior", state: "Traversing", isLeader: true }
-        });
-      }
-      // If there are less than 3 non-leader warriors, spawn a new one
-      else if (numWarriors < 3) {
-        // Spawn a new non-leader warrior
-        let newName = "Warrior" + Game.time;
-        const warrior =
-          spawnEnergy < 1300 ? creepMaker(spawnEnergy, "Warrior") : creepMaker(spawnEnergy, "WarriorBlock2");
-        spawn.spawnCreep(warrior, newName, {
-          memory: { role: "Warrior", state: "Traversing", isLeader: false }
+        // Spawn a new remote harvester with the home room and target room in its memory
+        let newName = "RemoteHarvester" + Game.time;
+        spawn.spawnCreep(creepMaker(spawnEnergy, "remoteHarvester"), newName, {
+          memory: { role: "remoteHarvester", home: spawn.room.name, target: targetRoom, state: "harvesting" }
         });
       }
 
-      // If a leader exists, update all non-leader warriors with the leader's name
-      if (leader) {
-        for (let name in Game.creeps) {
-          let creep = Game.creeps[name];
-          if (creep.memory.role == "Warrior" && !creep.memory.leader) {
-            creep.memory.leader = leader.name;
+      // If a flag called "basicAttack" exists, spawn four warriors to attack the room
+      if (Game.flags["basicAttack"]) {
+        // Calculate the number of warrior creeps
+        const numWarriors = _.filter(Game.creeps, creep => creep.memory.role == "Warrior").length;
+        const leader = _.find(Game.creeps, creep => creep.memory.role == "Warrior" && creep.memory.leader);
+
+        // Check if it's time to spawn the leader
+        if (!leader && numWarriors === 3) {
+          // Spawn the leader
+          let newName = "WarriorLeader" + Game.time;
+          const warrior = creepMaker(spawnEnergy, "WarriorBlock2");
+          spawn.spawnCreep(warrior, newName, {
+            memory: { role: "Warrior", state: "Traversing", isLeader: true }
+          });
+        }
+        // If there are less than 3 non-leader warriors, spawn a new one
+        else if (numWarriors < 3) {
+          // Spawn a new non-leader warrior
+          let newName = "Warrior" + Game.time;
+          const warrior =
+            spawnEnergy < 1300 ? creepMaker(spawnEnergy, "Warrior") : creepMaker(spawnEnergy, "WarriorBlock2");
+          spawn.spawnCreep(warrior, newName, {
+            memory: { role: "Warrior", state: "Traversing", isLeader: false }
+          });
+        }
+
+        // If a leader exists, update all non-leader warriors with the leader's name
+        if (leader) {
+          for (let name in Game.creeps) {
+            let creep = Game.creeps[name];
+            if (creep.memory.role == "Warrior" && !creep.memory.leader) {
+              creep.memory.leader = leader.name;
+            }
           }
         }
       }
-    }
 
-    // If a flag called "controllerKiller" exists, spawn a ControllerKiller to attack the room
-    if (Game.flags["controllerKiller"]) {
-      // If there is less then four ControlKillers, spawn a new one
-      if (_.filter(Game.creeps, creep => creep.memory.role == "ControllerKiller").length < 1) {
-        // Spawn a new claimer
-        let newName = "ControllerKiller" + Game.time;
-        spawn.spawnCreep(creepMaker(spawnEnergy, "ControllerKiller"), newName, {
-          memory: { role: "ControllerKiller" }
-        });
+      // If a flag called "controllerKiller" exists, spawn a ControllerKiller to attack the room
+      if (Game.flags["controllerKiller"]) {
+        // If there is less then four ControlKillers, spawn a new one
+        if (_.filter(Game.creeps, creep => creep.memory.role == "ControllerKiller").length < 1) {
+          // Spawn a new claimer
+          let newName = "ControllerKiller" + Game.time;
+          spawn.spawnCreep(creepMaker(spawnEnergy, "ControllerKiller"), newName, {
+            memory: { role: "ControllerKiller" }
+          });
+        }
       }
     }
 
@@ -179,59 +177,12 @@ export class RoomManager {
       let spawningCreep = Game.creeps[spawn.spawning.name];
 
       // Visualize the role of the spawning creep above the spawn
-      spawn.room.visual.text(
-        "🛠️" + spawningCreep.memory.role,
-        spawn.pos.x + 1,
-        spawn.pos.y,
-        { align: "left", opacity: 0.8 }
-      );
+      spawn.room.visual.text("🛠️" + spawningCreep.memory.role, spawn.pos.x + 1, spawn.pos.y, {
+        align: "left",
+        opacity: 0.8
+      });
     }
 
-    // Loop through creep's names in Game.creeps
-    for (var creepName in Game.creeps) {
-      // Get the creep based on the its name
-      var creep = Game.creeps[creepName];
-
-      // If the creep is a harvester
-      if (creep.memory.role == "harvester") {
-        // Run the creep as one and iterate
-        new Harvester(creep);
-        continue;
-      }
-
-      // If the creep is an worker
-      if (creep.memory.role == "worker") {
-        // Run the creep as one and iterate
-        new Worker(creep);
-        continue;
-      }
-
-      // If the creep is a hauler
-      if (creep.memory.role == "hauler") {
-        // Run the creep as one and iterate
-        new Hauler(creep);
-        continue;
-      }
-
-      // If the creep is a long range harvester
-      if (creep.memory.role == "remoteHarvester") {
-        // Run the creep as one and iterate
-        new RemoteHarvester(creep);
-        continue;
-      }
-
-      // Starts the warrior
-      if (creep.memory.role == "Warrior") {
-        new Warrior(creep);
-        continue;
-      }
-
-      // Starts the controller killer
-      if (creep.memory.role == "ControllerKiller") {
-        new ControllerKiller(creep);
-        continue;
-      }
-    }
     // Starts the tower
     new Tower(spawn.room);
 
