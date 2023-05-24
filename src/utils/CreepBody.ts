@@ -64,7 +64,7 @@ export function CreepBody(energy: number, roleName: String): BodyPartConstant[] 
 
       return body;
 
-      case "WarriorBlock2":
+    case "WarriorBlock2":
       body.push(TOUGH);
       body.push(TOUGH);
       body.push(TOUGH);
@@ -96,25 +96,14 @@ export function CreepBody(energy: number, roleName: String): BodyPartConstant[] 
 
       return body;
 
-      case "ControllerKiller":
-        body.push(MOVE);
-        body.push(MOVE);
-        body.push(MOVE);
-        body.push(MOVE);
-        body.push(MOVE);
-        body.push(CLAIM);
-        body.push(CLAIM);
-        body.push(CLAIM);
-        body.push(CLAIM);
-        body.push(CLAIM);
+    case "Claimer":
+      body.push(MOVE);
+      body.push(CLAIM);
 
-        return body;
+      return body;
 
-        case "RoomDrainer":
-
-
-        return body;
-
+    case "RoomDrainer":
+      return body;
   }
   return [];
 }

@@ -1,4 +1,5 @@
 interface CreepMemory {
+    building?: any
     beingServed?: boolean
     leader?: any
     isLeader?: any
@@ -7,4 +8,5 @@ interface CreepMemory {
     state?: any
     role?: String
     targetSource?: Id<Source>
+    currentRoom?: any
 }

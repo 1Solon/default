@@ -266,7 +266,7 @@ export class ConstructionManager {
     }
 
     // Place a link for the upgrader
-    if (roomLevel! >= 5 && noOfLinks + noOfLinksSites < 2) {
+    if (roomLevel! >= 5 && noOfLinks + noOfLinksSites < 1) {
       this.placeLinkForUpgrader(room);
     }
 
