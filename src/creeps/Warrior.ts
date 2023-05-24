@@ -14,13 +14,13 @@ export class Warrior {
     const hostileCreeps = creep.room?.find(FIND_HOSTILE_CREEPS);
     const spawner = creep.pos.findClosestByPath(FIND_HOSTILE_SPAWNS);
     const turret = creep.pos.findClosestByPath(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } });
+    const closestHostileStructure = creep.pos.findClosestByPath(FIND_HOSTILE_STRUCTURES);
 
     // Determine if this creep is the 'leader'
     const isLeader = creep.memory.isLeader;
 
     // Handle squad logic
     if (isLeader) {
-      console.log("test")
       if (!targetRoom || creep.room != flag.room) {
         creep.moveTo(flag);
       }
@@ -96,15 +96,17 @@ export class Warrior {
             }
           }
         }
-        // If no creeps are left, and the spawner is dead. Call in the ControllerKiller by placing a flag
-        // When done, remove "basicAttack" and self-terminate
+        // If there are no hostile creeps, or key buildings. Beging destroying other buildings
         else if (hostileCreeps.length === 0 && !spawner && targetRoom) {
-          if (creep.hits < creep.hitsMax) {
-            // if this creep is injured,
-            // heal itself
-            creep.heal(creep);
+          // Try to attack, if the target is not in range
+          if (creep.attack(closestHostileStructure!) === ERR_NOT_IN_RANGE) {
+            if (creep.hits < creep.hitsMax) {
+              // if this creep is injured, heal itself
+              creep.heal(creep);
+            }
+            // Move towards the target
+            creep.moveTo(closestHostileStructure!);
           }
-          // Logic for calling in the ControllerKiller and self-terminating goes here
         }
       }
     }
