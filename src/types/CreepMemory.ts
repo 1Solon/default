@@ -1,4 +1,5 @@
 interface CreepMemory {
+    beingServed?: boolean
     leader?: any
     isLeader?: any
     home?: any
