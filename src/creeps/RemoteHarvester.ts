@@ -1,5 +1,18 @@
 export class RemoteHarvester {
   constructor(creep: Creep) {
+    const isAttackFlagEnable = creep.room.find(FIND_FLAGS, {  filter: (flag) => flag.name == "basicAttack" }).length > 0;
+    const hostileStructures = creep.pos.findClosestByPath(FIND_HOSTILE_STRUCTURES);
+
+    // If there are hostile structures and the attack flag is not enabled, spawn an attack flag here
+    if (hostileStructures && !isAttackFlagEnable) {
+      creep.room.createFlag(creep.pos, "basicAttack");
+    }
+
+    // If the attack flag is enabled, and there are no hostile sturctures, remove the flag
+    if (isAttackFlagEnable && !hostileStructures) {
+      creep.room.find(FIND_FLAGS, {  filter: (flag) => flag.name == "basicAttack" })[0].remove();
+    }
+
     switch (creep.memory.state) {
       case "harvesting":
         let targetRoom = Game.rooms[creep.memory.target!];
@@ -50,7 +63,8 @@ export class RemoteHarvester {
       return i.memory.role == "worker";
     });
     const notFullWorkers = _.filter(workers, function (i) {
-      return i.store[RESOURCE_ENERGY] < i.store.getCapacity();
+      // Ensure the worker is not full and not currently being served by another harvester
+      return i.store[RESOURCE_ENERGY] < i.store.getCapacity() && !i.memory.beingServed;
     });
 
     // If there are any workers that are not full
@@ -58,15 +72,20 @@ export class RemoteHarvester {
       const closestWorker = creep.pos.findClosestByRange(notFullWorkers);
 
       // Make sure the creep has enough energy to achieve this task
-
-      // Try to transfer energy to the worker, if not in range
       if (closestWorker) {
+        // Mark this worker as being served
+        closestWorker.memory.beingServed = true;
+
+        // Try to transfer energy to the worker, if not in range
         if (creep.transfer(closestWorker, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
           // Move to it
           creep.moveTo(closestWorker, {
             visualizePathStyle: { stroke: "#ffaa00" },
             reusePath: 0
           });
+        } else {
+          // If energy was transferred successfully, mark the worker as no longer being served
+          closestWorker.memory.beingServed = false;
         }
       }
       return false;
