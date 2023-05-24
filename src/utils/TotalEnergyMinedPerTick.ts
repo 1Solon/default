@@ -1,9 +1,9 @@
 // Function to calculate the total energy mined per tick
-export function calculateTotalEnergyMinedPerTick(): number {
+export function calculateTotalEnergyMinedPerTick(room: Room): number {
   let totalEnergyMinedPerTick = 0;
 
   // Get all harvester creeps
-  const harvesters = _.filter(Game.creeps, creep => creep.memory.role === "harvester");
+  const harvesters = _.filter(Game.creeps, creep => creep.memory.role === "harvester" && creep.room.name === room.name);
 
   // Get all remote harvesters
   const remoteHarvesters = _.filter(Game.creeps, creep => creep.memory.role === "remoteHarvester");

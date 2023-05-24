@@ -1,6 +1,6 @@
 // Import creeps
 import { Worker } from "creeps/Worker";
-import { ControllerKiller } from "creeps/ControllerKiller";
+import { Claimer } from "creeps/Claimer";
 import { Harvester } from "creeps/Harvester";
 import { Hauler } from "creeps/Hauler";
 import { RemoteHarvester } from "creeps/RemoteHarvester";
@@ -19,9 +19,14 @@ export const loop = ErrorMapper.wrapLoop(() => {
     const room = Game.rooms[roomName];
 
     // If the room is owned by me
-    if (room.controller?.my) {
-      // Run the room manager
-      new RoomManager(room);
+    try {
+      if (room.controller?.my) {
+        // Run the room manager
+        new RoomManager(room);
+      }
+
+    } catch (error) {
+      console.log(error);
     }
 
     // Loop through creep's names in Game.creeps
@@ -64,8 +69,8 @@ export const loop = ErrorMapper.wrapLoop(() => {
       }
 
       // Starts the controller killer
-      if (creep.memory.role == "ControllerKiller") {
-        new ControllerKiller(creep);
+      if (creep.memory.role == "Claimer") {
+        new Claimer(creep);
         continue;
       }
     }

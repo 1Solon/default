@@ -1,9 +1,9 @@
 // Function to calculate
-export function calculateConsumedEnergyPerWorker(): number {
+export function calculateConsumedEnergyPerWorker(room: Room): number {
     let highestEnergyWorker = 0;
 
     // Get all worker creeps
-    const workers = _.filter(Game.creeps, creep => creep.memory.role === "worker");
+    const workers = _.filter(Game.creeps, creep => creep.memory.role === "worker" && creep.room.name === room.name);
 
     // Loop through each worker
     for (const worker of workers) {

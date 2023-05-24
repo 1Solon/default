@@ -11,9 +11,9 @@ import { calculateConsumedEnergyPerWorker } from "utils/calculateConsumedEnergyP
 export class RoomManager {
   constructor(room: Room) {
     // Get counts for creeps of each role
-    var harvesters = _.filter(Game.creeps, creep => creep.memory.role == "harvester");
-    var workers = _.filter(Game.creeps, creep => creep.memory.role == "worker");
-    var haulers = _.filter(Game.creeps, creep => creep.memory.role == "hauler");
+    var harvesters = _.filter(Game.creeps, creep => creep.memory.role == "harvester" && creep.room.name == room.name);
+    var workers = _.filter(Game.creeps, creep => creep.memory.role == "worker" && creep.room.name == room.name);
+    var haulers = _.filter(Game.creeps, creep => creep.memory.role == "hauler" && creep.room.name == room.name);
 
     // Define spawn
     let spawn = room.find(FIND_MY_SPAWNS)[0];
@@ -25,19 +25,25 @@ export class RoomManager {
     let sources = spawn.room.find(FIND_SOURCES);
 
     // Calculate the total energy mined per tick
-    let totalEnergyMinedPerTick = calculateTotalEnergyMinedPerTick();
+    let totalEnergyMinedPerTick = calculateTotalEnergyMinedPerTick(room);
 
     // Calculate the total energy consumed per tick
-    let workerCost = calculateConsumedEnergyPerWorker();
+    let workerCost = calculateConsumedEnergyPerWorker(room);
 
     // Using totalEnergyMinedPerTick and totalEnergyConsumedPerTick, calculate the max number of workers that can be supported
     let maxWorkersForBuilding = Math.floor(totalEnergyMinedPerTick / workerCost);
+    if (room.controller?.level! < 3) {
+      maxWorkersForBuilding = 2;
+    }
 
     // Get exits from the spawn room
     let exits = Game.map.describeExits(spawn.room.name);
 
     // Get an array of room names
     let roomNames = Object.values(exits);
+
+    // Create an object to hold the counts of remote harvesters for each room
+    let harvesterCounts: { [key: string]: number } = {};
 
     // Loop through each creep's name in Memory.creeps
     for (var creepName in Memory.creeps) {
@@ -49,9 +55,15 @@ export class RoomManager {
       }
     }
 
-    // Create an object to hold the counts of remote harvesters for each room
-    let harvesterCounts: { [key: string]: number } = {};
+    // Spawn a remote harvester for each unclaimed room around the spawn room
     for (let roomName of roomNames) {
+      let room = Game.rooms[roomName];
+
+      // Skip this room if it's claimed by the player
+      if (room && room.controller && room.controller.my) {
+        continue;
+      }
+
       harvesterCounts[roomName] = _.filter(
         Game.creeps,
         creep => creep.memory.role == "remoteHarvester" && creep.memory.target == roomName
@@ -94,7 +106,7 @@ export class RoomManager {
           let newName = "Harvester" + Game.time;
           if (spawnEnergy >= 300 || spawn.room.controller?.level! < 2) {
             spawn.spawnCreep(creepMaker(spawnEnergy, "harvester"), newName, {
-              memory: { role: "harvester", targetSource: sources[i].id }
+              memory: { role: "harvester", targetSource: sources[i].id, home: spawn.room.name }
             });
           }
         }
@@ -108,7 +120,7 @@ export class RoomManager {
       if (!dedicatedUpgrader) {
         let newName = "Upgrader" + Game.time;
         spawn.spawnCreep(creepMaker(spawnEnergy, "worker"), newName, {
-          memory: { role: "worker", state: "dedicatedUpgrader" }
+          memory: { role: "worker", state: "dedicatedUpgrader", home: spawn.room.name }
         });
       }
 
@@ -117,7 +129,7 @@ export class RoomManager {
         // Spawn a new worker with as many sets of parts as we can afford
         let newName = "Worker" + Game.time;
         spawn.spawnCreep(creepMaker(spawnEnergy, "worker"), newName, {
-          memory: { role: "worker" }
+          memory: { role: "worker", home: spawn.room.name }
         });
       }
     }
@@ -127,7 +139,9 @@ export class RoomManager {
     if (haulers.length < harvesters.length) {
       // Spawn a new one
       let newName = "Hauler" + Game.time;
-      spawn.spawnCreep(creepMaker(spawnEnergy, "hauler"), newName, { memory: { role: "hauler" } });
+      spawn.spawnCreep(creepMaker(spawnEnergy, "hauler"), newName, {
+        memory: { role: "hauler", home: spawn.room.name }
+      });
     }
 
     // Do not spawn these unless there is base eco
@@ -155,7 +169,7 @@ export class RoomManager {
             spawnEnergy < 1300 ? creepMaker(spawnEnergy, "Warrior") : creepMaker(spawnEnergy, "WarriorBlock2");
 
           spawn.spawnCreep(warrior, newName, {
-            memory: { role: "Warrior", state: "Traversing", isLeader: true }
+            memory: { role: "Warrior", state: "Traversing", isLeader: true, home: spawn.room.name }
           });
         }
         // If there are less than 3 non-leader warriors, spawn a new one
@@ -166,7 +180,7 @@ export class RoomManager {
             spawnEnergy < 1300 ? creepMaker(spawnEnergy, "Warrior") : creepMaker(spawnEnergy, "WarriorBlock2");
 
           spawn.spawnCreep(warrior, newName, {
-            memory: { role: "Warrior", state: "Traversing", isLeader: false }
+            memory: { role: "Warrior", state: "Traversing", isLeader: false, home: spawn.room.name }
           });
         }
 
@@ -185,17 +199,39 @@ export class RoomManager {
       // If a flag called "controllerKiller" exists, spawn a ControllerKiller to attack the room
       if (Game.flags["controllerKiller"]) {
         // If there is less then four ControlKillers, spawn a new one
-        if (_.filter(Game.creeps, creep => creep.memory.role == "ControllerKiller").length < 1) {
+        if (_.filter(Game.creeps, creep => creep.memory.role == "Claimer").length < 1) {
           // Spawn a new claimer
-          let newName = "ControllerKiller" + Game.time;
-          spawn.spawnCreep(creepMaker(spawnEnergy, "ControllerKiller"), newName, {
-            memory: { role: "ControllerKiller" }
+          let newName = "Claimer" + Game.time;
+          spawn.spawnCreep(creepMaker(spawnEnergy, "Claimer"), newName, {
+            memory: { role: "Claimer", home: spawn.room.name }
+          });
+        }
+      }
+
+      // If a flag called "claimRoom" exists, spawn a claimer to claim the room
+      // Additionally, spawn two workers with the state 'spawnMaker' to build the spawn
+      if (Game.flags["claim"]) {
+        // If there is less then four ControlKillers, spawn a new one
+        if (_.filter(Game.creeps, creep => creep.memory.role == "Claimer").length < 1) {
+          // Spawn a new claimer
+          let newName = "Claimer" + Game.time;
+          spawn.spawnCreep(creepMaker(spawnEnergy, "Claimer"), newName, {
+            memory: { role: "Claimer", home: spawn.room.name }
+          });
+        }
+
+        // If there are less than two spawnMakers, spawn a new one
+        if (
+          _.filter(Game.creeps, creep => creep.memory.role == "worker" && creep.memory.state == "spawnMaker").length < 2
+        ) {
+          // Spawn a new spawnMaker
+          let newName = "SpawnMaker" + Game.time;
+          spawn.spawnCreep(creepMaker(spawnEnergy, "worker"), newName, {
+            memory: { role: "worker", state: "spawnMaker", home: spawn.room.name }
           });
         }
       }
     }
-
-    // If a flag called "claimRoom" exists, spawn a claimer to claim the room
 
     // If the spawn is spawning a creep
     if (spawn.spawning) {
@@ -219,8 +255,10 @@ export class RoomManager {
     console.log(
       "Amount of energy mined a tick: ",
       totalEnergyMinedPerTick.toString(),
-      "Total Energy Availible For Spawner: ",
-      spawnEnergy.toString()
+      "| Total Energy Availible For Spawner: ",
+      spawnEnergy.toString(),
+      "| Room:",
+      spawn.room.name
     );
     console.log("Total amount of supported workers: ", maxWorkersForBuilding);
   }
