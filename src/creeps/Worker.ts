@@ -1,6 +1,9 @@
 export class Worker {
   constructor(creep: Creep) {
-    let controller = creep.room.controller;
+    const controller = creep.room.controller;
+
+    // This is neccessary to prevent the creep from being stuck in a loop
+    creep.memory.beingServed = false;
 
     // If it has the dedicatedUpgrader role, this is the only thing it should do
     if (creep.memory.state == "dedicatedUpgrader") {
