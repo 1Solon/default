@@ -32,10 +32,6 @@ export class RoomManager {
 
     // Using totalEnergyMinedPerTick and totalEnergyConsumedPerTick, calculate the max number of workers that can be supported
     let maxWorkersForBuilding = Math.floor(totalEnergyMinedPerTick / workerCost);
-    // If there is active construction projects, hard-code the max workers to 2
-    if (spawn.room.find(FIND_CONSTRUCTION_SITES).length > 0) {
-      maxWorkersForBuilding = 2;
-    }
 
     // Get exits from the spawn room
     let exits = Game.map.describeExits(spawn.room.name);
@@ -53,60 +49,76 @@ export class RoomManager {
       }
     }
 
-    // Wait until the spawn is full of passivly generated energy before starting a build
-    if (spawn.store.energy >= 300 || spawn.room.controller?.level! < 4) {
-      // If there is not enough haulers per resource zone, build them
-      if (harvesters.length < sources.length * 2) {
-        // Creates a counting array of the same size as sources
-        let noOfMinersAtSources: number[] = [];
-        for (const i in sources) {
-          noOfMinersAtSources.push(0);
-        }
+    // Create an object to hold the counts of remote harvesters for each room
+    let harvesterCounts: { [key: string]: number } = {};
+    for (let roomName of roomNames) {
+      harvesterCounts[roomName] = _.filter(
+        Game.creeps,
+        creep => creep.memory.role == "remoteHarvester" && creep.memory.target == roomName
+      ).length;
+    }
 
-        // Counts how many harvesters there are of each source
-        for (const i in sources) {
-          for (const j in harvesters) {
-            let creepMem = harvesters[j].memory.targetSource;
-            if (creepMem) {
-              if (sources[i].id == creepMem) {
-                noOfMinersAtSources[i]++;
-              }
-            }
-          }
-        }
+    // Find the room with the least number of assigned remote harvesters
+    let minCount = Infinity;
+    let targetRoom = null;
+    for (let roomName in harvesterCounts) {
+      if (harvesterCounts[roomName] < minCount) {
+        minCount = harvesterCounts[roomName];
+        targetRoom = roomName;
+      }
+    }
 
-        // Checks if a source has no harvesters assigned, if no, spawn one
-        for (const i in noOfMinersAtSources) {
-          if (noOfMinersAtSources[i] < 1) {
-            let newName = "Harvester" + Game.time;
-            if (spawnEnergy >= 300 || spawn.room.controller?.level! < 4) {
-              spawn.spawnCreep(creepMaker(spawnEnergy, "harvester"), newName, {
-                memory: { role: "harvester", targetSource: sources[i].id }
-              });
+    // If there is not enough haulers per resource zone, build them
+    if (harvesters.length < sources.length * 2) {
+      // Creates a counting array of the same size as sources
+      let noOfMinersAtSources: number[] = [];
+      for (const i in sources) {
+        noOfMinersAtSources.push(0);
+      }
+
+      // Counts how many harvesters there are of each source
+      for (const i in sources) {
+        for (const j in harvesters) {
+          let creepMem = harvesters[j].memory.targetSource;
+          if (creepMem) {
+            if (sources[i].id == creepMem) {
+              noOfMinersAtSources[i]++;
             }
           }
         }
       }
 
-      // TODO: Bandaid fix, prevents workers out-building harvesters
-      if (harvesters.length >= 2) {
-        // Ensure that there's always a dedicated upgrader
-        const dedicatedUpgrader = _.find(Game.creeps, creep => creep.memory.state == "dedicatedUpgrader");
-        if (!dedicatedUpgrader) {
-          let newName = "Upgrader" + Game.time;
-          spawn.spawnCreep(creepMaker(spawnEnergy, "worker"), newName, {
-            memory: { role: "worker", state: "dedicatedUpgrader" }
-          });
+      // Checks if a source has no harvesters assigned, if no, spawn one
+      for (const i in noOfMinersAtSources) {
+        if (noOfMinersAtSources[i] < 1) {
+          let newName = "Harvester" + Game.time;
+          if (spawnEnergy >= 300 || spawn.room.controller?.level! < 2) {
+            spawn.spawnCreep(creepMaker(spawnEnergy, "harvester"), newName, {
+              memory: { role: "harvester", targetSource: sources[i].id }
+            });
+          }
         }
+      }
+    }
 
-        // If there are less workers than the max number, spawn new ones
-        if (workers.length < maxWorkersForBuilding) {
-          // Spawn a new worker with as many sets of parts as we can afford
-          let newName = "Worker" + Game.time;
-          spawn.spawnCreep(creepMaker(spawnEnergy, "worker"), newName, {
-            memory: { role: "worker" }
-          });
-        }
+    // TODO: Bandaid fix, prevents workers out-building harvesters
+    if (harvesters.length >= 2) {
+      // Ensure that there's always a dedicated upgrader
+      const dedicatedUpgrader = _.find(Game.creeps, creep => creep.memory.state == "dedicatedUpgrader");
+      if (!dedicatedUpgrader) {
+        let newName = "Upgrader" + Game.time;
+        spawn.spawnCreep(creepMaker(spawnEnergy, "worker"), newName, {
+          memory: { role: "worker", state: "dedicatedUpgrader" }
+        });
+      }
+
+      // If there are less workers than the max number, spawn new ones
+      if (workers.length < maxWorkersForBuilding) {
+        // Spawn a new worker with as many sets of parts as we can afford
+        let newName = "Worker" + Game.time;
+        spawn.spawnCreep(creepMaker(spawnEnergy, "worker"), newName, {
+          memory: { role: "worker" }
+        });
       }
     }
 
@@ -120,15 +132,12 @@ export class RoomManager {
 
     // Do not spawn these unless there is base eco
     if (haulers.length >= 2 && harvesters.length >= 2) {
-      // If there are less than 2 remote harvesters per exit, spawn a new one
-      if (_.filter(Game.creeps, creep => creep.memory.role == "remoteHarvester").length < roomNames.length * 2) {
-        // Choose a random room
-        let targetRoom = roomNames[Math.floor(Math.random() * roomNames.length)];
-
+      // If there are less than 2 remote harvesters per exit, spawn a new one for the room with the least number of remote harvesters
+      if (minCount < 2) {
         // Spawn a new remote harvester with the home room and target room in its memory
         let newName = "RemoteHarvester" + Game.time;
         spawn.spawnCreep(creepMaker(spawnEnergy, "remoteHarvester"), newName, {
-          memory: { role: "remoteHarvester", home: spawn.room.name, target: targetRoom, state: "harvesting" }
+          memory: { role: "remoteHarvester", home: spawn.room.name, target: targetRoom!, state: "harvesting" }
         });
       }
 
@@ -136,13 +145,15 @@ export class RoomManager {
       if (Game.flags["basicAttack"]) {
         // Calculate the number of warrior creeps
         const numWarriors = _.filter(Game.creeps, creep => creep.memory.role == "Warrior").length;
-        const leader = _.find(Game.creeps, creep => creep.memory.role == "Warrior" && creep.memory.leader);
+        const leader = _.find(Game.creeps, creep => creep.memory.role == "Warrior" && creep.memory.isLeader);
 
         // Check if it's time to spawn the leader
         if (!leader && numWarriors === 3) {
           // Spawn the leader
           let newName = "WarriorLeader" + Game.time;
-          const warrior = creepMaker(spawnEnergy, "WarriorBlock2");
+          const warrior =
+            spawnEnergy < 1300 ? creepMaker(spawnEnergy, "Warrior") : creepMaker(spawnEnergy, "WarriorBlock2");
+
           spawn.spawnCreep(warrior, newName, {
             memory: { role: "Warrior", state: "Traversing", isLeader: true }
           });
@@ -153,6 +164,7 @@ export class RoomManager {
           let newName = "Warrior" + Game.time;
           const warrior =
             spawnEnergy < 1300 ? creepMaker(spawnEnergy, "Warrior") : creepMaker(spawnEnergy, "WarriorBlock2");
+
           spawn.spawnCreep(warrior, newName, {
             memory: { role: "Warrior", state: "Traversing", isLeader: false }
           });
@@ -160,6 +172,7 @@ export class RoomManager {
 
         // If a leader exists, update all non-leader warriors with the leader's name
         if (leader) {
+          console.log("test");
           for (let name in Game.creeps) {
             let creep = Game.creeps[name];
             if (creep.memory.role == "Warrior" && !creep.memory.leader) {
