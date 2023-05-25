@@ -132,7 +132,7 @@ export class Worker {
           // Move to it
           creep.moveTo(storage, {
             visualizePathStyle: { stroke: "#ffaa00" },
-            reusePath: 0
+            reusePath: 5
           });
         }
         return false;
@@ -144,7 +144,7 @@ export class Worker {
           // Move to it
           creep.moveTo(closestContainer, {
             visualizePathStyle: { stroke: "#ffaa00" },
-            reusePath: 0
+            reusePath: 5
           });
         }
         return false;

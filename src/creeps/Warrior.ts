@@ -22,7 +22,7 @@ export class Warrior {
     // Handle squad logic
     if (isLeader) {
       if (!targetRoom || creep.room != flag.room) {
-        creep.moveTo(flag);
+        creep.moveTo(flag, {reusePath: 5});
       }
     } else if (!isLeader && creep.room != targetRoom) {
       // If not the leader, follow the leader
@@ -30,11 +30,11 @@ export class Warrior {
       if (leader) {
         // If the leader is within range, follow the leader
         if (creep.pos.isNearTo(leader.pos)) {
-          creep.moveTo(leader);
+          creep.moveTo(leader, {reusePath: 5});
         }
         // If leader is not in range, move to leader's position
         else {
-          creep.moveTo(leader);
+          creep.moveTo(leader, {reusePath: 5});
         }
       }
     }
@@ -48,7 +48,7 @@ export class Warrior {
 
       // If the leader creep is not in the target room, move to the flag
       if (!targetRoom || creep.room != flag.room) {
-        creep.moveTo(flag);
+        creep.moveTo(flag, {reusePath: 5});
       } else {
         // If a turret exists, eliminate
         if (turret) {
@@ -59,7 +59,7 @@ export class Warrior {
               creep.heal(creep);
             }
             // Move towards the target
-            creep.moveTo(turret);
+            creep.moveTo(turret, {reusePath: 5});
           }
         }
         // If a spawner exists, eliminate
@@ -71,7 +71,7 @@ export class Warrior {
               creep.heal(creep);
             }
             // Move towards the target
-            creep.moveTo(spawner);
+            creep.moveTo(spawner, {reusePath: 5});
           }
         }
         // If any creeps dare survive, obliterate
@@ -87,7 +87,7 @@ export class Warrior {
                 creep.heal(creep);
               }
               // Move towards the target
-              creep.moveTo(closestHostile);
+              creep.moveTo(closestHostile, {reusePath: 5});
             }
             // If in melee range and injured, try to repair
             if (creep.hits < creep.hitsMax) {
@@ -105,7 +105,7 @@ export class Warrior {
               creep.heal(creep);
             }
             // Move towards the target
-            creep.moveTo(closestHostileStructure!);
+            creep.moveTo(closestHostileStructure!, {reusePath: 5});
           }
         }
       }
