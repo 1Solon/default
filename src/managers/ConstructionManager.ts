@@ -5,8 +5,6 @@ export class ConstructionManager {
   totalTowers: number | undefined;
 
   constructor(room: Room) {
-    // Populates buildable building limits
-    this.getTotalBuildableBuildings(room);
 
     let spawn = room.find(FIND_MY_SPAWNS)[0];
 
@@ -33,40 +31,8 @@ export class ConstructionManager {
       true
     );
 
-    // Finds the number of extensions in the room
-    let noOfextensions = spawn.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_EXTENSION } }).length;
-
-    // Finds the number of extension sites in the room
-    let noOfextensionsSites = spawn.room.find(FIND_CONSTRUCTION_SITES, {
-      filter: { structureType: STRUCTURE_EXTENSION }
-    }).length;
-
-    // Finds the number of towers in the room
-    let noOfTowers = spawn.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } }).length;
-
-    // Finds the number of tower sites in the room
-    let noOfTowerSites = spawn.room.find(FIND_CONSTRUCTION_SITES, {
-      filter: { structureType: STRUCTURE_TOWER }
-    }).length;
-
-    // Finds the number of towers in the room
-    let noOfStorage = spawn.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_STORAGE } }).length;
-
-    // Finds the number of tower sites in the room
-    let noOfStorageSites = spawn.room.find(FIND_CONSTRUCTION_SITES, {
-      filter: { structureType: STRUCTURE_STORAGE }
-    }).length;
-
-    // Finds the number of links in the room
-    let noOfLinks = spawn.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LINK } }).length;
-
-    // Finds the number of link sites in the room
-    let noOfLinksSites = spawn.room.find(FIND_CONSTRUCTION_SITES, {
-      filter: { structureType: STRUCTURE_LINK }
-    }).length;
-
     // Build containers on harvesters
-    if (room.controller?.level! >= 3){
+    if (room.controller?.level! >= 3) {
       this.placeContainerOnHarvester(room);
     }
 
@@ -118,220 +84,19 @@ export class ConstructionManager {
       }
     }
 
-    // If the number of extensions is less then the total number of extensions buildable
-    // TODO: Hook up the hard-coded 20 to RCL level
-    if (this.totalExtensions) {
-      if (noOfextensions + noOfextensionsSites < this.totalExtensions) {
-        // Iterate through a 5x5x5 cube around the spawn
-        for (const i in roomTerrain) {
-          // This is sadly needed to be checked twice, first to save CPU. Second so it actually stops once the buildable limit is hit
-          if (noOfextensions + noOfextensionsSites < this.totalExtensions + 1) {
-            // If the room tile is a plain or swamp
-            if (roomTerrain[i].terrain.includes("plain") || roomTerrain[i].terrain.includes("swamp")) {
-              // If the room tile does not already contain a building
-              if (spawn.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
-                // If the Y is even, check if X is even or odd. Build accordingly.
-                if (roomTerrain[i].y % 2 == 0) {
-                  if (roomTerrain[i].x % 2 == 0) {
-                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
-                  } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_EXTENSION);
-                    noOfextensionsSites++;
-                  }
+    // Creates extensions
+    this.checkerboard(roomTerrain, room, STRUCTURE_EXTENSION, CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][room.controller?.level!]);
 
-                  // If the Y is odd, check if X is even or odd. Build accordingly.
-                } else if (Math.abs(roomTerrain[i].y % 2) == 1) {
-                  if (roomTerrain[i].x % 2 == 0) {
-                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_EXTENSION);
-                    noOfextensionsSites++;
-                  } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    // Creates towers
+    this.checkerboard(roomTerrain, room, STRUCTURE_TOWER, CONTROLLER_STRUCTURES[STRUCTURE_TOWER][room.controller?.level!]);
 
-    // If the number of turrets is less then the total number of turrets buildable
-    // TODO: Hook up the hard-coded 1 to RCL level
-    if (this.totalTowers) {
-      if (noOfTowers + noOfTowerSites < this.totalTowers) {
-        // Iterate through a 5x5x5 cube around the spawn
-        for (const i in roomTerrain) {
-          // This is sadly needed to be checked twice, first to save CPU. Second so it actually stops once the buildable limit is hit
-          if (noOfTowers + noOfTowerSites < this.totalTowers + 1) {
-            // If the room tile is a plain or swamp
-            if (roomTerrain[i].terrain.includes("plain") || roomTerrain[i].terrain.includes("swamp")) {
-              // If the room tile does not already contain a building
-              if (spawn.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
-                // If the Y is even, check if X is even or odd. Build accordingly.
-                if (roomTerrain[i].y % 2 == 0) {
-                  if (roomTerrain[i].x % 2 == 0) {
-                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
-                  } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_TOWER);
-                    noOfTowerSites++;
-                  }
-
-                  // If the Y is odd, check if X is even or odd. Build accordingly.
-                } else if (Math.abs(roomTerrain[i].y % 2) == 1) {
-                  if (roomTerrain[i].x % 2 == 0) {
-                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_TOWER);
-                    noOfTowerSites++;
-                  } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // If the number of storages is less then the total number of storages buildable
-    // TODO: Hook up the hard-coded 1 to RCL level
-    if (noOfStorage + noOfStorageSites < 1) {
-      // Iterate through a 5x5x5 cube around the spawn
-      for (const i in roomTerrain) {
-        // This is sadly needed to be checked twice, first to save CPU. Second so it actually stops once the buildable limit is hit
-        if (noOfStorage + noOfStorageSites < 1 + 1) {
-          // If the room tile is a plain or swamp
-          if (roomTerrain[i].terrain.includes("plain") || roomTerrain[i].terrain.includes("swamp")) {
-            // If the room tile does not already contain a building
-            if (spawn.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
-              // If the Y is even, check if X is even or odd. Build accordingly.
-              if (roomTerrain[i].y % 2 == 0) {
-                if (roomTerrain[i].x % 2 == 0) {
-                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
-                } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_STORAGE);
-                  noOfStorageSites++;
-                }
-
-                // If the Y is odd, check if X is even or odd. Build accordingly.
-              } else if (Math.abs(roomTerrain[i].y % 2) == 1) {
-                if (roomTerrain[i].x % 2 == 0) {
-                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_STORAGE);
-                  noOfStorageSites++;
-                } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                  spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    // Creates storage
+    this.checkerboard(roomTerrain, room, STRUCTURE_STORAGE, CONTROLLER_STRUCTURES[STRUCTURE_STORAGE][room.controller?.level!]);
 
     // If there is not a link in the spawn cube, build one
-    let roomLevel = room.controller?.level;
+    const roomLevel = room.controller?.level;
     if (roomLevel! >= 5) {
-      // If the number of links is less then the total number of links buildable
-      if (noOfLinks + noOfLinksSites < 1) {
-        // Iterate through a 5x5x5 cube around the spawn
-        for (const i in roomTerrain) {
-          // This is sadly needed to be checked twice, first to save CPU. Second so it actually stops once the buildable limit is hit
-          if (noOfLinks + noOfLinksSites < 1) {
-            // If the room tile is a plain or swamp
-            if (roomTerrain[i].terrain.includes("plain") || roomTerrain[i].terrain.includes("swamp")) {
-              // If the room tile does not already contain a building
-              if (spawn.room.lookForAt(LOOK_STRUCTURES, roomTerrain[i].x, roomTerrain[i].y).length == 0) {
-                // If the Y is even, check if X is even or odd. Build accordingly.
-                if (roomTerrain[i].y % 2 == 0) {
-                  if (roomTerrain[i].x % 2 == 0) {
-                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
-                  } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_LINK);
-                    noOfLinksSites++;
-                  }
-
-                  // If the Y is odd, check if X is even or odd. Build accordingly.
-                } else if (Math.abs(roomTerrain[i].y % 2) == 1) {
-                  if (roomTerrain[i].x % 2 == 0) {
-                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_LINK);
-                    noOfLinksSites++;
-                  } else if (Math.abs(roomTerrain[i].x % 2) == 1) {
-                    spawn.room.createConstructionSite(roomTerrain[i].x, roomTerrain[i].y, STRUCTURE_ROAD);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Place a link for the upgrader
-    if (roomLevel! >= 5 && noOfLinks + noOfLinksSites < 1) {
-      this.placeLinkForUpgrader(room);
-    }
-
-  }
-
-  // Based on the Room Control Level- this will populate the variables that store the max amount of X building that can be made
-  getTotalBuildableBuildings(room: Room): void {
-    let roomLevel = room.controller?.level;
-
-    if (roomLevel) {
-      switch (roomLevel) {
-        case 0:
-          this.totalExtensions = 0;
-          this.totalStorage = 0;
-          this.totalTowers = 0;
-          break;
-
-        case 1:
-          this.totalExtensions = 0;
-          this.totalStorage = 0;
-          this.totalTowers = 0;
-          break;
-
-        case 2:
-          this.totalExtensions = 5;
-          this.totalStorage = 0;
-          this.totalTowers = 0;
-          break;
-
-        case 3:
-          this.totalExtensions = 10;
-          this.totalStorage = 0;
-          this.totalTowers = 1;
-          break;
-
-        case 4:
-          this.totalExtensions = 20;
-          this.totalStorage = 1;
-          this.totalTowers = 1;
-          break;
-
-        case 5:
-          this.totalExtensions = 30;
-          this.totalStorage = 1;
-          this.totalTowers = 2;
-          break;
-
-        case 6:
-          this.totalExtensions = 40;
-          this.totalStorage = 1;
-          this.totalTowers = 2;
-          break;
-
-        case 7:
-          this.totalExtensions = 50;
-          this.totalStorage = 1;
-          this.totalTowers = 3;
-          break;
-
-        case 8:
-          this.totalExtensions = 60;
-          this.totalStorage = 1;
-          this.totalTowers = 6;
-          break;
-      }
+      this.checkerboard(roomTerrain, room, STRUCTURE_LINK, CONTROLLER_STRUCTURES[STRUCTURE_LINK][1]);
     }
   }
 
@@ -367,60 +132,75 @@ export class ConstructionManager {
     return false;
   }
 
-  placeLinkForUpgrader(room: Room): void {
-    // Get the controller for this room
-    let controller = room.controller;
-    if (!controller) {
-      // No controller in this room, do nothing
-      return;
-    }
+      /**
+     * Creates a checkerboard pattern of roads and buildings
+     *
+     * @param roomTerrain - The terrain of the area to be checkerboarded
+     * @param room - The room this is being done in
+     * @param building - The building type to be checkerboarded
+     * @param maxOfBuilding - The maximum number of buildings of this type to be built
 
-    // Check the positions around the controller for a free spot
-    for (let dx = -2; dx <= 2; dx++) {
-      for (let dy = -2; dy <= 2; dy++) {
-        // We don't want to build on the controller's position
-        if (dx === 0 && dy === 0) {
-          continue;
-        }
+     */
+  checkerboard(
+    roomTerrain: LookForAtAreaResultArray<Terrain, "terrain">,
+    room: Room,
+    building: BuildableStructureConstant,
+    maxOfBuilding: number
+  ): void {
 
-        // Calculate the position where we'd like to build
-        let x = controller.pos.x + dx;
-        let y = controller.pos.y + dy;
+    // Grab the maximum number of the target building by room level
+    const targetNoOfBuildins = maxOfBuilding;
 
-        // Check if this position is inside the room
-        if (x < 0 || y < 0 || x >= 50 || y >= 50) {
-          continue;
-        }
+    // Get the current number of buildings and building sites of that type
+    let noOfBuildings = room.find(FIND_STRUCTURES, {
+      filter: structure => structure.structureType === building
+    }).length;
+    let noOfBuildingsSites = room.find(FIND_CONSTRUCTION_SITES, {
+      filter: structure => structure.structureType === building
+    }).length;
 
-        // Check for walls or other impassable terrain
-        if (room.lookForAt(LOOK_TERRAIN, x, y)[0] === "wall") {
-          continue;
-        }
+    // The spawn should always be the first spawn building in the stack
+    const spawn = room.find(FIND_MY_SPAWNS)[0];
 
-        // Check for creeps at this position
-        if (room.lookForAt(LOOK_CREEPS, x, y).length > 0) {
-          continue;
-        }
+    // If the number of buildings is less than the total number of buildings buildable
+    if (noOfBuildings + noOfBuildingsSites < targetNoOfBuildins) {
+      for (const i in roomTerrain) {
+        // Get room position
+        let roomPos = new RoomPosition(roomTerrain[i].x, roomTerrain[i].y, spawn.room.name);
 
-        // Look for any structures or construction sites at this position
-        let thingsAtPos = room.lookAt(new RoomPosition(x, y, room.name));
-        let isPosFree = thingsAtPos.every(
-          thing => thing.type !== LOOK_STRUCTURES && thing.type !== LOOK_CONSTRUCTION_SITES
-        );
+        // We use bitwise AND operation here instead of modulo operation for efficiency.
+        const xIsEven = roomPos.x & 1;
+        const yIsEven = roomPos.y & 1;
 
-        // If there's nothing there, build the link
-        if (isPosFree) {
-          let result = room.createConstructionSite(x, y, STRUCTURE_LINK);
-          if (result == OK) {
-            return; // We're done, exit the function
-          }
-          else {
-            console.log(`Failed to create construction site at ${x},${y} due to error code ${result}`);
+        // Check terrain
+        const terrain = roomPos.lookFor(LOOK_TERRAIN);
+
+        // Check structure
+        const structure = roomPos.lookFor(LOOK_STRUCTURES);
+
+        // Check conditions
+        if (terrain[0] === "plain" || terrain[0] === "swamp") {
+          if (!structure.length) {
+            if (yIsEven) {
+              if (xIsEven) {
+                spawn.room.createConstructionSite(roomPos, STRUCTURE_ROAD);
+              } else {
+                spawn.room.createConstructionSite(roomPos, building);
+                noOfBuildingsSites++;
+                if (noOfBuildings + noOfBuildingsSites >= targetNoOfBuildins) break;
+              }
+            } else {
+              if (xIsEven) {
+                spawn.room.createConstructionSite(roomPos, building);
+                noOfBuildingsSites++;
+                if (noOfBuildings + noOfBuildingsSites >= targetNoOfBuildins) break;
+              } else {
+                spawn.room.createConstructionSite(roomPos, STRUCTURE_ROAD);
+              }
+            }
           }
         }
       }
     }
   }
-
-
 }
