@@ -39,7 +39,7 @@ export class Hauler {
             // Move to it
             creep.moveTo(closestSpawn, {
               visualizePathStyle: { stroke: "#ffaa00" },
-              reusePath: 0
+              reusePath: 5
             });
           }
         }
@@ -76,7 +76,7 @@ export class Hauler {
             // Move to it
             creep.moveTo(closestEmptyExtension, {
               visualizePathStyle: { stroke: "#ffaa00" },
-              reusePath: 0
+              reusePath: 5
             });
           }
         }
@@ -112,7 +112,7 @@ export class Hauler {
             // Move to it
             creep.moveTo(closestTower, {
               visualizePathStyle: { stroke: "#ffaa00" },
-              reusePath: 0
+              reusePath: 5
             });
           }
         }
@@ -149,7 +149,7 @@ export class Hauler {
             // Move to it
             creep.moveTo(closestStorage, {
               visualizePathStyle: { stroke: "#ffaa00" },
-              reusePath: 0
+              reusePath: 5
             });
           }
         }
@@ -171,7 +171,8 @@ export class Hauler {
       return i.memory.role == "worker";
     });
     const notFullWorkers = _.filter(workers, function (i) {
-      return i.store[RESOURCE_ENERGY] < i.store.getCapacity();
+      // Ensure the worker is not full and not currently being served by another harvester
+      return i.store[RESOURCE_ENERGY] < i.store.getCapacity()/2 && !i.memory.beingServed;
     });
 
     // If there are any workers that are not full
@@ -180,14 +181,20 @@ export class Hauler {
 
       // Make sure the creep has enough energy to achieve this task
       if (this.retrieveEnergy(creep, false)) {
-        // Try to transfer energy to the worker, if not in range
         if (closestWorker) {
+          // Mark this worker as being served
+          closestWorker.memory.beingServed = true;
+
+          // Try to transfer energy to the worker, if not in range
           if (creep.transfer(closestWorker, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
             // Move to it
             creep.moveTo(closestWorker, {
               visualizePathStyle: { stroke: "#ffaa00" },
-              reusePath: 0
+              reusePath: 5
             });
+          } else {
+            // If energy was transferred successfully, mark the worker as no longer being served
+            closestWorker.memory.beingServed = false;
           }
         }
       }
@@ -207,7 +214,9 @@ export class Hauler {
     });
 
     // Find containers that have enough energy to fill the creep
-    const containers = _.filter(allContainers, function (i) { return i.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity(); });
+    const containers = _.filter(allContainers, function (i) {
+      return i.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity();
+    });
 
     // Find the closest container
     const closestContainer = creep.pos.findClosestByRange(containers);
@@ -220,7 +229,7 @@ export class Hauler {
           // Move to it
           creep.moveTo(storage, {
             visualizePathStyle: { stroke: "#ffaa00" },
-            reusePath: 0
+            reusePath: 5
           });
         }
         return false;
@@ -232,7 +241,7 @@ export class Hauler {
           // Move to it
           creep.moveTo(closestContainer, {
             visualizePathStyle: { stroke: "#ffaa00" },
-            reusePath: 0
+            reusePath: 5
           });
         }
         return false;
@@ -254,7 +263,7 @@ export class Hauler {
             // Move to it
             creep.moveTo(closestDroppedEnergy, {
               visualizePathStyle: { stroke: "#ffaa00" },
-              reusePath: 0
+              reusePath: 5
             });
           }
         }

@@ -1,6 +1,6 @@
 export class RemoteHarvester {
   constructor(creep: Creep) {
-    const isAttackFlagEnable = creep.room.find(FIND_FLAGS, {  filter: (flag) => flag.name == "basicAttack" }).length > 0;
+    const isAttackFlagEnable = creep.room.find(FIND_FLAGS, { filter: flag => flag.name == "basicAttack" }).length > 0;
     const hostileStructures = creep.pos.findClosestByPath(FIND_HOSTILE_STRUCTURES);
 
     // If there are hostile structures and the attack flag is not enabled, spawn an attack flag here
@@ -10,24 +10,22 @@ export class RemoteHarvester {
 
     // If the attack flag is enabled, and there are no hostile sturctures, remove the flag
     if (isAttackFlagEnable && !hostileStructures) {
-      creep.room.find(FIND_FLAGS, {  filter: (flag) => flag.name == "basicAttack" })[0].remove();
+      creep.room.find(FIND_FLAGS, { filter: flag => flag.name == "basicAttack" })[0].remove();
     }
 
     switch (creep.memory.state) {
       case "harvesting":
         let targetRoom = Game.rooms[creep.memory.target!];
-        if (!targetRoom) {
+        if (!targetRoom || creep.room.name != targetRoom.name) {
           // If targetRoom is undefined, move to the target room
-          creep.moveTo(new RoomPosition(25, 25, creep.memory.target!));
+          creep.moveTo(new RoomPosition(25, 25, creep.memory.target!), { reusePath: 5 });
         } else {
           // Find closest source
-          let source = creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
+          let source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
 
           if (creep.store.getFreeCapacity() > 0) {
-            if (creep.room.name !== targetRoom.name) {
-              creep.moveTo(new RoomPosition(25, 25, creep.memory.target!));
-            } else if (creep.harvest(source!) === ERR_NOT_IN_RANGE) {
-              creep.moveTo(source!);
+            if (creep.harvest(source!) === ERR_NOT_IN_RANGE) {
+              creep.moveTo(source!, { reusePath: 5 });
             }
           } else {
             creep.memory.state = "returning";
@@ -40,9 +38,9 @@ export class RemoteHarvester {
         if (creep.store[RESOURCE_ENERGY] === 0) {
           creep.memory.state = "harvesting";
         } else if (creep.room.name !== creep.memory.home) {
-          creep.moveTo(new RoomPosition(25, 25, creep.memory.home));
+          creep.moveTo(new RoomPosition(25, 25, creep.memory.home), { reusePath: 5 });
         } else if (creep.transfer(storage!, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-          creep.moveTo(storage!);
+          creep.moveTo(storage!, { reusePath: 5 });
         } else if (creep.room.energyAvailable < 300 && creep.room.controller!.level < 2) {
           this.refillSpawn(creep);
         } else {
@@ -81,7 +79,7 @@ export class RemoteHarvester {
           // Move to it
           creep.moveTo(closestWorker, {
             visualizePathStyle: { stroke: "#ffaa00" },
-            reusePath: 0
+            reusePath: 5
           });
         } else {
           // If energy was transferred successfully, mark the worker as no longer being served
@@ -115,7 +113,7 @@ export class RemoteHarvester {
           // Move to it
           creep.moveTo(closestSpawn, {
             visualizePathStyle: { stroke: "#ffaa00" },
-            reusePath: 0
+            reusePath: 5
           });
         }
       }
