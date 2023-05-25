@@ -245,21 +245,7 @@ export class RoomManager {
       });
     }
 
-    // Starts the tower
-    new Tower(spawn.room);
-
     // Runs the construction manager
     new constructionManager(spawn.room);
-
-    // Usage
-    console.log(
-      "Amount of energy mined a tick: ",
-      totalEnergyMinedPerTick.toString(),
-      "| Total Energy Availible For Spawner: ",
-      spawnEnergy.toString(),
-      "| Room:",
-      spawn.room.name
-    );
-    console.log("Total amount of supported workers: ", maxWorkersForBuilding);
   }
 }
