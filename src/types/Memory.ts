@@ -1,4 +1,5 @@
 interface Memory {
-    roomIndex?: any;
-    roomQueue?: any;
+  roomIndex: any;
+  roomQueue: any;
+
 }

@@ -1,15 +1,20 @@
+import { timeToRenew } from "./creepFunctions/timeToRenew";
+
 export class Hauler {
   constructor(creep: Creep) {
-    // 1: Refill Extensions
-    if (this.refillExtension(creep)) {
-      // 2: Refill Spawn
-      if (this.refillSpawn(creep)) {
-        // 3: Refill Towers
-        if (this.refillTowers(creep)) {
-          // 4: Stockpile Energy
-          if (this.refillStorage(creep)) {
-            // 5: Refill Workers
-            this.refillWorker(creep);
+    // Before logic loop, check if this creep needs to be renewed
+    if (timeToRenew(creep)) {
+      // 1: Refill Towers
+      if (this.refillTowers(creep)) {
+        // 2: Refill Refill Extensions
+        if (this.refillExtension(creep)) {
+          // 3: Refill Spawns
+          if (this.refillSpawn(creep)) {
+            // 4: Stockpile Energy
+            if (this.refillStorage(creep)) {
+              // 5: Refill Workers
+              this.refillWorker(creep);
+            }
           }
         }
       }
@@ -172,7 +177,7 @@ export class Hauler {
     });
     const notFullWorkers = _.filter(workers, function (i) {
       // Ensure the worker is not full and not currently being served by another harvester
-      return i.store[RESOURCE_ENERGY] < i.store.getCapacity()/2 && !i.memory.beingServed;
+      return i.store[RESOURCE_ENERGY] < i.store.getCapacity() / 2 && !i.memory.beingServed;
     });
 
     // If there are any workers that are not full

@@ -1,3 +1,4 @@
+import { timeToRenew } from "./creepFunctions/timeToRenew";
 export class Worker {
   constructor(creep: Creep) {
     const controller = creep.room.controller;
@@ -71,36 +72,39 @@ export class Worker {
 
     // If it does not, resume normal operation
     else {
-      if (this.retrieveEnergy(creep, false)) {
-        // Check if there is a storage with more than 1000 energy
-        const storage = creep.room.storage;
-        if (!storage || (storage && storage.store[RESOURCE_ENERGY] > 1000)) {
-          // If the creep is full, try to find an active construction project to work on
-          if (creep.room.find(FIND_CONSTRUCTION_SITES).length > 0 && creep.room.controller?.ticksToDowngrade! > 1000) {
-            // Try to finish a construction site, if not in range
-            // Ignore construction sites when the controler degrade timer drops below 1000
+      // Handle renew logic
+      if (timeToRenew(creep)) {
+        if (this.retrieveEnergy(creep, false)) {
+          // Check if there is a storage with more than 1000 energy
+          const storage = creep.room.storage;
+          if (!storage || (storage && storage.store[RESOURCE_ENERGY] > 1000)) {
+            // If the creep is full, try to find an active construction project to work on
+            if (creep.room.find(FIND_CONSTRUCTION_SITES).length > 0 && creep.room.controller?.ticksToDowngrade! > 1000) {
+              // Try to finish a construction site, if not in range
+              // Ignore construction sites when the controler degrade timer drops below 1000
 
-            const target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
-            if (target) {
-              if (creep.build(target) == ERR_NOT_IN_RANGE) {
-                // Move into range
-                creep.moveTo(target, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
+              const target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
+              if (target) {
+                if (creep.build(target) == ERR_NOT_IN_RANGE) {
+                  // Move into range
+                  creep.moveTo(target, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
+                }
+              }
+            } else {
+              if (controller) {
+                // Try to upgrade the controller. If not in range
+                if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
+                  // Move to it
+                  creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
+                }
               }
             }
-          } else {
+            // If storage exists and has less than 1000 energy then move close to the room controller and wait there
+          } else if (storage && storage.store[RESOURCE_ENERGY] < 1000) {
             if (controller) {
-              // Try to upgrade the controller. If not in range
-              if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
-                // Move to it
-                creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
-              }
+              // Move to it
+              creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
             }
-          }
-          // If storage exists and has less than 1000 energy then move close to the room controller and wait there
-        } else if (storage && storage.store[RESOURCE_ENERGY] < 1000) {
-          if (controller) {
-            // Move to it
-            creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
           }
         }
       }
