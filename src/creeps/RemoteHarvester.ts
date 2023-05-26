@@ -1,3 +1,5 @@
+import { timeToRenew } from "./creepFunctions/timeToRenew";
+
 export class RemoteHarvester {
   constructor(creep: Creep) {
     const isAttackFlagEnable = creep.room.find(FIND_FLAGS, { filter: flag => flag.name == "basicAttack" }).length > 0;
@@ -13,41 +15,44 @@ export class RemoteHarvester {
       creep.room.find(FIND_FLAGS, { filter: flag => flag.name == "basicAttack" })[0].remove();
     }
 
-    switch (creep.memory.state) {
-      case "harvesting":
-        let targetRoom = Game.rooms[creep.memory.target!];
-        if (!targetRoom || creep.room.name != targetRoom.name) {
-          // If targetRoom is undefined, move to the target room
-          creep.moveTo(new RoomPosition(25, 25, creep.memory.target!), { reusePath: 5 });
-        } else {
-          // Find closest source
-          let source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
-
-          if (creep.store.getFreeCapacity() > 0) {
-            if (creep.harvest(source!) === ERR_NOT_IN_RANGE) {
-              creep.moveTo(source!, { reusePath: 5 });
-            }
+    // Handle renew logic
+    if (timeToRenew(creep)) {
+      switch (creep.memory.state) {
+        case "harvesting":
+          let targetRoom = Game.rooms[creep.memory.target!];
+          if (!targetRoom || creep.room.name != targetRoom.name) {
+            // If targetRoom is undefined, move to the target room
+            creep.moveTo(new RoomPosition(25, 25, creep.memory.target!), { reusePath: 5 });
           } else {
-            creep.memory.state = "returning";
+            // Find closest source
+            let source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
+
+            if (creep.store.getFreeCapacity() > 0) {
+              if (creep.harvest(source!) === ERR_NOT_IN_RANGE) {
+                creep.moveTo(source!, { reusePath: 5 });
+              }
+            } else {
+              creep.memory.state = "returning";
+            }
           }
-        }
-        break;
-      case "returning":
-        let storage = Game.rooms[creep.memory.home].storage;
+          break;
+        case "returning":
+          let storage = Game.rooms[creep.memory.home].storage;
 
-        if (creep.store[RESOURCE_ENERGY] === 0) {
-          creep.memory.state = "harvesting";
-        } else if (creep.room.name !== creep.memory.home) {
-          creep.moveTo(new RoomPosition(25, 25, creep.memory.home), { reusePath: 5 });
-        } else if (creep.transfer(storage!, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-          creep.moveTo(storage!, { reusePath: 5 });
-        } else if (creep.room.energyAvailable < 300 && creep.room.controller!.level < 2) {
-          this.refillSpawn(creep);
-        } else {
-          this.refillWorker(creep);
-        }
+          if (creep.store[RESOURCE_ENERGY] === 0) {
+            creep.memory.state = "harvesting";
+          } else if (creep.room.name !== creep.memory.home) {
+            creep.moveTo(new RoomPosition(25, 25, creep.memory.home), { reusePath: 5 });
+          } else if (creep.transfer(storage!, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(storage!, { reusePath: 5 });
+          } else if (creep.room.energyAvailable < 300 && creep.room.controller!.level < 2) {
+            this.refillSpawn(creep);
+          } else {
+            this.refillWorker(creep);
+          }
 
-        break;
+          break;
+      }
     }
   }
 

@@ -1,4 +1,5 @@
 interface CreepMemory {
+    renewing?: any
     building?: any
     beingServed?: boolean
     leader?: any
