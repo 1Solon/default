@@ -5,7 +5,6 @@ export class ConstructionManager {
   totalTowers: number | undefined;
 
   constructor(room: Room) {
-
     let spawn = room.find(FIND_MY_SPAWNS)[0];
 
     // Defines sources
@@ -85,18 +84,38 @@ export class ConstructionManager {
     }
 
     // Creates extensions
-    this.checkerboard(roomTerrain, room, STRUCTURE_EXTENSION, CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][room.controller?.level!]);
+    this.checkerboard(
+      roomTerrain,
+      room,
+      STRUCTURE_EXTENSION,
+      CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][room.controller?.level!]
+    );
 
     // Creates towers
-    this.checkerboard(roomTerrain, room, STRUCTURE_TOWER, CONTROLLER_STRUCTURES[STRUCTURE_TOWER][room.controller?.level!]);
+    this.checkerboard(
+      roomTerrain,
+      room,
+      STRUCTURE_TOWER,
+      CONTROLLER_STRUCTURES[STRUCTURE_TOWER][room.controller?.level!]
+    );
 
     // Creates storage
-    this.checkerboard(roomTerrain, room, STRUCTURE_STORAGE, CONTROLLER_STRUCTURES[STRUCTURE_STORAGE][room.controller?.level!]);
+    this.checkerboard(
+      roomTerrain,
+      room,
+      STRUCTURE_STORAGE,
+      CONTROLLER_STRUCTURES[STRUCTURE_STORAGE][room.controller?.level!]
+    );
 
     // If there is not a link in the spawn cube, build one
     const roomLevel = room.controller?.level;
-    if (roomLevel! >= 5) {
-      this.checkerboard(roomTerrain, room, STRUCTURE_LINK, CONTROLLER_STRUCTURES[STRUCTURE_LINK][1]);
+    if (roomLevel! > 4) {
+      this.checkerboard(roomTerrain, room, STRUCTURE_LINK, 1);
+    }
+
+    // Place a link near the controller
+    if (roomLevel! > 4) {
+      this.placeLinkNearController(room);
     }
   }
 
@@ -132,7 +151,7 @@ export class ConstructionManager {
     return false;
   }
 
-      /**
+  /**
      * Creates a checkerboard pattern of roads and buildings
      *
      * @param roomTerrain - The terrain of the area to be checkerboarded
@@ -147,7 +166,6 @@ export class ConstructionManager {
     building: BuildableStructureConstant,
     maxOfBuilding: number
   ): void {
-
     // Grab the maximum number of the target building by room level
     const targetNoOfBuildins = maxOfBuilding;
 
@@ -202,5 +220,54 @@ export class ConstructionManager {
         }
       }
     }
+  }
+
+  placeLinkNearController(room: Room): boolean {
+    const controller = room.controller;
+
+    if (!controller) {
+      console.log("Room controller not found!");
+      return false;
+    }
+
+    // Get all links and link construction sites in the room
+    const links = room.find(FIND_MY_STRUCTURES, {
+      filter: { structureType: STRUCTURE_LINK }
+    });
+    const constructionSites = room.find(FIND_CONSTRUCTION_SITES, {
+      filter: { structureType: STRUCTURE_LINK }
+    });
+
+    // Check if there are less than two links or link construction sites
+    if (links.length + constructionSites.length >= 2) {
+      return false;
+    }
+
+    // Get all spots within two spaces of the controller
+    const locations = room.lookForAtArea(
+      LOOK_TERRAIN,
+      Math.max(controller.pos.y - 2, 0),
+      Math.max(controller.pos.x - 2, 0),
+      Math.min(controller.pos.y + 2, 49),
+      Math.min(controller.pos.x + 2, 49),
+      true
+    );
+
+    // Filter out locations that aren't plain or swamp terrain
+    const validLocations = locations.filter(({ terrain }) => terrain !== "wall");
+
+    // Attempt to create a construction site for a link at each location
+    for (let { x, y } of validLocations) {
+      const result = room.createConstructionSite(x, y, STRUCTURE_LINK);
+
+      if (result === OK) {
+        console.log(`Link construction site placed at (${x}, ${y})`);
+        return true;
+      }
+    }
+
+    // If no valid location is found, return false
+    console.log("No valid location for link construction found!");
+    return false;
   }
 }

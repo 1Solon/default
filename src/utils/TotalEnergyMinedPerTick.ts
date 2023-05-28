@@ -26,5 +26,25 @@ export function calculateTotalEnergyMinedPerTick(room: Room): number {
     totalEnergyMinedPerTick += workModuleCount * 0.1; // Each WORK module mines 2 energy per tick
   }
 
+  // Determine if a storage exists in the room
+  if (room.memory.roomClock == 0) {
+    if (room.storage) {
+      if (room.storage.store.energy > room.memory.previousStorageEnergy) {
+        room.memory.harvesterEfficiency += 0.10;
+      } else {
+        room.memory.harvesterEfficiency -= 0.10;
+      }
+      // Store current energy
+      room.memory.previousStorageEnergy = room.storage!.store.energy;
+    }
+  }
+  // Print the room and the harvester effiency and the clock
+  console.log(
+    ((room.name + " " + room.memory.harvesterEfficiency.toFixed(2)) as unknown as number) + " " + room.memory.roomClock
+  );
+
+  // Apply effiency metric
+  totalEnergyMinedPerTick *= room.memory.harvesterEfficiency;
+
   return totalEnergyMinedPerTick.toFixed(2) as unknown as number;
 }

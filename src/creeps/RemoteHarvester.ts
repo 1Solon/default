@@ -72,7 +72,7 @@ export class RemoteHarvester {
 
     // If there are any workers that are not full
     if (notFullWorkers.length > 0) {
-      const closestWorker = creep.pos.findClosestByRange(notFullWorkers);
+      const closestWorker = creep.pos.findClosestByPath(notFullWorkers);
 
       // Make sure the creep has enough energy to achieve this task
       if (closestWorker) {
@@ -109,7 +109,7 @@ export class RemoteHarvester {
     });
     // If there are any spawns that are not full
     if (notFullSpawns.length > 0) {
-      const closestSpawn = creep.pos.findClosestByRange(notFullSpawns);
+      const closestSpawn = creep.pos.findClosestByPath(notFullSpawns);
 
       // Make sure the creep has enough energy to achieve this task
       // Try to transfer energy to the spawn, if not in range

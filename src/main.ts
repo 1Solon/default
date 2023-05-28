@@ -14,41 +14,58 @@ import { ErrorMapper } from "utils/ErrorMapper";
 import { Tower } from "creeps/Tower";
 
 export const loop = ErrorMapper.wrapLoop(() => {
-  // Initialize or reinitialize the room queue if necessary
-  if (!Memory.rooms || Object.keys(Memory.rooms).length !== Object.keys(Game.rooms).length) {
+  // Ensure Memory.rooms exists
+  if (!Memory.rooms) {
     Memory.rooms = {};
   }
+  // Iterate over all rooms in the game
+  for (let roomName in Game.rooms) {
+    const room = Game.rooms[roomName];
 
-  // Populate room memory with owned room objects if they don't already exist
-  for (const roomName in Game.rooms) {
-    let room = Game.rooms[roomName];
-
-    // If the room is owned by me and the room memory does not already exist
-    if (room.controller?.my && !Memory.rooms[roomName]) {
-      Memory.rooms[roomName] = {
-        roomObject: room,
-        remoteHarvesterEfficiency: room.storage ? 0.2 : 0.1,
-        previousStorageEnergy: room.storage ? room.storage.store.getUsedCapacity(RESOURCE_ENERGY) : 0
-      };
+    // Check if the room is owned by you
+    if (room.controller && room.controller.my) {
+      // Initialize this room in memory if it isn't present already
+      if (!Memory.rooms[roomName]) {
+        Memory.rooms[roomName] = {
+          roomObject: room, // Don't remove this, it does nothing, but for some reason removing it breaks the code
+          harvesterEfficiency: room.storage ? 1 : 1,
+          previousStorageEnergy: room.storage ? room.storage.store.getUsedCapacity(RESOURCE_ENERGY) : 0,
+          roomClock: 0,
+          maxWorkersForBuilding: 0
+        };
+      }
     }
   }
 
   // Get the room object and index from the queue
   let roomName = Object.keys(Memory.rooms)[Memory.roomIndex];
-  let room = Memory.rooms[roomName].roomObject;
+  let room = Game.rooms[roomName];
 
   // If the room is owned by me
   try {
     // Run the room manager
     new RoomManager(room);
     new Tower(room);
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+  }
 
   // Increment the index for the next tick
   Memory.roomIndex = (Memory.roomIndex + 1) % Object.keys(Memory.rooms).length;
 
+  // Increment the index for the next tick
+  Memory.roomIndex = (Memory.roomIndex + 1) % Object.keys(Memory.rooms).length;
+
+  // Increment the clock for the next tick
+  Memory.rooms[roomName].roomClock += 1;
+
+  // If the clock exeeds 60, reset it
+  if (Memory.rooms[roomName].roomClock > 60) {
+    Memory.rooms[roomName].roomClock = 0;
+  }
+
   // Prints current cpu usage
-  console.log("Current CPU usage: " + Math.round(Game.cpu.getUsed() / Game.cpu.limit * 100) + "%");
+  console.log("Current CPU usage: " + Math.round((Game.cpu.getUsed() / Game.cpu.limit) * 100) + "%");
 
   // Loop through creep's names in Game.creeps
   for (var creepName in Game.creeps) {

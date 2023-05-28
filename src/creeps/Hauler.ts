@@ -1,6 +1,7 @@
 import { timeToRenew } from "./creepFunctions/timeToRenew";
 
 export class Hauler {
+
   constructor(creep: Creep) {
     // Before logic loop, check if this creep needs to be renewed
     if (timeToRenew(creep)) {
@@ -32,9 +33,17 @@ export class Hauler {
     const notFullSpawns = _.filter(spawns, function (i) {
       return i.store[RESOURCE_ENERGY] < 300;
     });
+
+     // Get the tasks of all other haulers in the toom
+     const creeps: Creep[] = creep.room.find(FIND_MY_CREEPS);
+     const haulersDoingSameTask = creeps.filter(function (i) {
+       return i.memory.role == "hauler" && i.memory.currentTaskPos == creep.memory.currentTaskPos;
+     });
+
     // If there are any spawns that are not full
-    if (notFullSpawns.length > 0) {
+    if (notFullSpawns.length > 0 && haulersDoingSameTask.length == 1) {
       const closestSpawn = creep.pos.findClosestByRange(notFullSpawns);
+      creep.memory.currentTaskPos = closestSpawn!.pos;
 
       // Make sure the creep has enough energy to achieve this task
       if (this.retrieveEnergy(creep, false)) {
@@ -68,12 +77,19 @@ export class Hauler {
       return i.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
     });
 
+    // Get the tasks of all other haulers in the toom
+    const creeps: Creep[] = creep.room.find(FIND_MY_CREEPS);
+    const haulersDoingSameTask = creeps.filter(function (i) {
+      return i.memory.role == "hauler" && i.memory.currentTaskPos == creep.memory.currentTaskPos;
+    });
+
     // If there are any empty extensions
-    if (notFullExtensions.length > 0) {
+    if (notFullExtensions.length > 0 && haulersDoingSameTask.length == 1) {
       // Make sure the creep has enough energy to achieve this task
       if (this.retrieveEnergy(creep, false)) {
         // Find the closest extension
         const closestEmptyExtension = creep.pos.findClosestByRange(notFullExtensions);
+        creep.memory.currentTaskPos = closestEmptyExtension!.pos;
 
         if (closestEmptyExtension) {
           // Try to transfer energy to the extension. If it's not in range
@@ -108,6 +124,7 @@ export class Hauler {
     // If there are any towers that are not full
     if (notFullTowers.length > 0) {
       const closestTower = creep.pos.findClosestByRange(notFullTowers);
+      creep.memory.currentTaskPos = closestTower!.pos;
 
       // Make sure the creep has enough energy to achieve this task
       if (this.retrieveEnergy(creep, false)) {

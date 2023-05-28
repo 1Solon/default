@@ -8,11 +8,17 @@ export class Worker {
 
     // If it has the dedicatedUpgrader role, this is the only thing it should do
     if (creep.memory.state == "dedicatedUpgrader") {
-      if (controller) {
-        // Try to upgrade the controller. If not in range
-        if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
-          // Move to it
-          creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
+      // Handle time-to-recycle logic
+      if (this.recycleCreepIfTooManyWorkers(creep)) {
+        // Handle renew logic
+        if (timeToRenew(creep)) {
+          if (controller) {
+            // Try to upgrade the controller. If not in range
+            if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
+              // Move to it
+              creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
+            }
+          }
         }
       }
     }
@@ -29,7 +35,7 @@ export class Worker {
         // If a spawner exists in the room, delete the claim flag
         const spawner = creep.room.find(FIND_MY_SPAWNS)[0];
         if (spawner) {
-          creep.suicide()
+          creep.suicide();
         }
 
         // If the creep's memory doesn't have a 'building' property, add it with a value of false
@@ -72,38 +78,44 @@ export class Worker {
 
     // If it does not, resume normal operation
     else {
-      // Handle renew logic
-      if (timeToRenew(creep)) {
-        if (this.retrieveEnergy(creep, false)) {
-          // Check if there is a storage with more than 1000 energy
-          const storage = creep.room.storage;
-          if (!storage || (storage && storage.store[RESOURCE_ENERGY] > 1000)) {
-            // If the creep is full, try to find an active construction project to work on
-            if (creep.room.find(FIND_CONSTRUCTION_SITES).length > 0 && creep.room.controller?.ticksToDowngrade! > 1000) {
-              // Try to finish a construction site, if not in range
-              // Ignore construction sites when the controler degrade timer drops below 1000
+      // Handle time-to-recycle logic
+      if (this.recycleCreepIfTooManyWorkers(creep)) {
+        // Handle renew logic
+        if (timeToRenew(creep)) {
+          if (this.retrieveEnergy(creep, false)) {
+            // Check if there is a storage with more than 1000 energy
+            const storage = creep.room.storage;
+            if (!storage || (storage && storage.store[RESOURCE_ENERGY] > 1000)) {
+              // If the creep is full, try to find an active construction project to work on
+              if (
+                creep.room.find(FIND_CONSTRUCTION_SITES).length > 0 &&
+                creep.room.controller?.ticksToDowngrade! > 1000
+              ) {
+                // Try to finish a construction site, if not in range
+                // Ignore construction sites when the controler degrade timer drops below 1000
 
-              const target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
-              if (target) {
-                if (creep.build(target) == ERR_NOT_IN_RANGE) {
-                  // Move into range
-                  creep.moveTo(target, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
+                const target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
+                if (target) {
+                  if (creep.build(target) == ERR_NOT_IN_RANGE) {
+                    // Move into range
+                    creep.moveTo(target, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
+                  }
+                }
+              } else {
+                if (controller) {
+                  // Try to upgrade the controller. If not in range
+                  if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
+                    // Move to it
+                    creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
+                  }
                 }
               }
-            } else {
+              // If storage exists and has less than 1000 energy then move close to the room controller and wait there
+            } else if (storage && storage.store[RESOURCE_ENERGY] < 1000) {
               if (controller) {
-                // Try to upgrade the controller. If not in range
-                if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
-                  // Move to it
-                  creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
-                }
+                // Move to it
+                creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
               }
-            }
-            // If storage exists and has less than 1000 energy then move close to the room controller and wait there
-          } else if (storage && storage.store[RESOURCE_ENERGY] < 1000) {
-            if (controller) {
-              // Move to it
-              creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" }, reusePath: 5 });
             }
           }
         }
@@ -153,6 +165,34 @@ export class Worker {
         }
         return false;
       }
+    }
+    return true;
+  }
+
+  recycleCreepIfTooManyWorkers(creep: Creep): boolean {
+    const room = creep.room;
+    const roomMemory = room.memory as any;
+
+    if (!roomMemory.maxWorkersForBuilding) {
+      console.log(`Room memory value 'maxWorkersForBuilding' not found for room ${room.name}`);
+      return true;
+    }
+
+    // Get the current number of workers in the room
+    const workersInRoom = _.filter(Game.creeps, c => c.memory.role === "worker" && c.memory.home === room.name);
+
+    if (workersInRoom.length > roomMemory.maxWorkersForBuilding) {
+      const spawn = creep.pos.findClosestByRange(FIND_MY_SPAWNS);
+      if (spawn) {
+        if (creep.pos.isNearTo(spawn)) {
+          spawn.recycleCreep(creep);
+        } else {
+          creep.moveTo(spawn);
+        }
+      } else {
+        console.log(`No spawn found to recycle creep ${creep.name}`);
+      }
+      return false;
     }
     return true;
   }

@@ -1,4 +1,5 @@
 interface CreepMemory {
+    currentTaskPos?: RoomPosition | null
     renewing?: any
     building?: any
     beingServed?: boolean

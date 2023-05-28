@@ -35,6 +35,7 @@ export class RoomManager {
     if (room.controller?.level! < 3) {
       maxWorkersForBuilding = 2;
     }
+    room.memory.maxWorkersForBuilding = maxWorkersForBuilding;
 
     // Get exits from the spawn room
     let exits = Game.map.describeExits(spawn.room.name);
@@ -103,12 +104,11 @@ export class RoomManager {
       // Checks if a source has no harvesters assigned, if no, spawn one
       for (const i in noOfMinersAtSources) {
         if (noOfMinersAtSources[i] < 1) {
-          let newName = "Harvester" + Game.time;
-          if (spawnEnergy >= 300 || spawn.room.controller?.level! < 2) {
-            spawn.spawnCreep(creepMaker(spawnEnergy, "harvester"), newName, {
-              memory: { role: "harvester", targetSource: sources[i].id, home: spawn.room.name }
-            });
-          }
+          const newName = "Harvester" + Game.time;
+          const harvester = spawnEnergy < 200 ? creepMaker(spawnEnergy, "basicHarvester") : creepMaker(spawnEnergy, "harvester");
+          spawn.spawnCreep(harvester, newName, {
+            memory: { role: "harvester", targetSource: sources[i].id, home: spawn.room.name }
+          });
         }
       }
     }
@@ -138,14 +138,15 @@ export class RoomManager {
     // We should only start making haulers when we have extensions
     if (haulers.length < harvesters.length) {
       // Spawn a new one
-      let newName = "Hauler" + Game.time;
-      spawn.spawnCreep(creepMaker(spawnEnergy, "hauler"), newName, {
+      const newName = "Hauler" + Game.time;
+      const hauler = spawnEnergy < 100 ? creepMaker(spawnEnergy, "basicHauler") : creepMaker(spawnEnergy, "hauler");
+      spawn.spawnCreep(hauler, newName, {
         memory: { role: "hauler", home: spawn.room.name }
       });
     }
 
     // Do not spawn these unless there is base eco
-    if (haulers.length >= 2 && harvesters.length >= 2) {
+    if (haulers.length == 2 && harvesters.length == 2) {
       // If there are less than 2 remote harvesters per exit, spawn a new one for the room with the least number of remote harvesters
       if (minCount < 2) {
         // Spawn a new remote harvester with the home room and target room in its memory
@@ -186,7 +187,6 @@ export class RoomManager {
 
         // If a leader exists, update all non-leader warriors with the leader's name
         if (leader) {
-          console.log("test");
           for (let name in Game.creeps) {
             let creep = Game.creeps[name];
             if (creep.memory.role == "Warrior" && !creep.memory.leader) {

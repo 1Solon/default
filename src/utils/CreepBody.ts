@@ -22,6 +22,13 @@ export function CreepBody(energy: number, roleName: String): BodyPartConstant[] 
 
       return body;
 
+    case "basicHarvester":
+      body.push(WORK);
+      body.push(CARRY);
+      body.push(MOVE);
+
+      return body;
+
     case "hauler":
       partBudget = Math.floor(energy / 100);
 
@@ -29,6 +36,13 @@ export function CreepBody(energy: number, roleName: String): BodyPartConstant[] 
         body.push(CARRY);
         body.push(MOVE);
       }
+
+      return body;
+
+      case "basicHauler":
+
+      body.push(CARRY);
+      body.push(MOVE);
 
       return body;
 
